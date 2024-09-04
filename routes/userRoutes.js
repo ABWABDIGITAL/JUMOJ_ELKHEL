@@ -17,5 +17,10 @@ router.post('/create-custom-token', UserController.createCustomToken);
 
 // Protected routes
 router.get('/email/:email', authenticateToken, UserController.getUserByPhone);
+router.get('/test-localization', (req, res) => {
+    res.json({
+      message: req.t('welcome_message') // Localized message
+    });
+  });
 
 module.exports = router;

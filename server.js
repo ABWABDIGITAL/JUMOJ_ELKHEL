@@ -4,6 +4,7 @@ const { sequelize } = require('./models/pannerModel');
 const i18next = require("i18next");
 const i18nextMiddleware = require("i18next-http-middleware");
 const Backend = require("i18next-fs-backend");
+const path = require('path');
 
 // Initialize Sentry
 Sentry.init({
@@ -35,6 +36,8 @@ app.use(express.json());
 // Your routes and other middleware
 app.use("/api", require("./routes/userRoutes"));
 app.use('/api/panners', require("./routes/pannerRoutes"));
+app.use('/api/department', require("./routes/departmentRoutes"));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Example route to test Sentry error capture
 app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");

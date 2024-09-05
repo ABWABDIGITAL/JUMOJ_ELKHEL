@@ -14,10 +14,10 @@ const {
 const UserController = {
  
   createUser: async (req, res) => {
-    const { name, email, phone, sortOfAccount, password, confirmPassword } = req.body;
+    const { name, email, phone, password, confirmPassword } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone || !sortOfAccount || !password || !confirmPassword) {
+    if (!name || !email || !phone || !password || !confirmPassword) {
       return res.status(400).json(formatErrorResponse('All fields are required'));
     }
 
@@ -42,7 +42,7 @@ const UserController = {
       }
 
       // Create the user
-      const user = await UserModel.createUser(name, email, phone, sortOfAccount, password);
+      const user = await UserModel.createUser(name, email, phone, password);
 
       // Generate tokens
       const accessToken = generateAccessToken(user);

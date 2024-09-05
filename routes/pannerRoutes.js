@@ -32,7 +32,8 @@ const storage = multer.diskStorage({
   
 // Route to create a new panner
 router.post('/', upload.single("image"),pannerController.createPanner);
-
+// Route to get all panners
+router.get("/", pannerController.getAllPanners);
 // Route to get a panner by ID
 router.get('/:id', pannerController.getPannerById);
 

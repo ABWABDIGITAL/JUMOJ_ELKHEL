@@ -67,13 +67,23 @@ const deletePanner = async (req, res) => {
     }
   } catch (error) {
     console.error("Error deleting panner:", error);
-    res.status(500).json(formatErrorResponse('Failed to delete panner'));
-  }
-};
+    res.status(500).json(formatErrorResponse('Failed to delete panner'));}
+  };
+  // Get all panners
+const getAllPanners = async (req, res) => {
+    try {
+      const panners = await PannerModel.getAllPanners();
+      res.status(200).json(formatSuccessResponse(panners, "Panners retrieved successfully"));
+    } catch (error) {
+      console.error("Error fetching all panners:", error);
+      res.status(500).json(formatErrorResponse("Failed to fetch panners"));
+    }}
+
 
 module.exports = {
   createPanner,
   getPannerById,
   updatePanner,
   deletePanner,
+  getAllPanners
 };

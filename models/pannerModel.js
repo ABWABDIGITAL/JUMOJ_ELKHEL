@@ -31,6 +31,17 @@ const PannerModel = {
     );
     return result.rows[0];
   },
+
+  // Get all panners
+  getAllPanners: async () => {
+    try {
+      const result = await pool.query("SELECT * FROM panners"); // Use 'pool' here
+      return result.rows;
+    } catch (error) {
+      console.error("Error fetching all panners:", error);
+      throw error;
+    }
+  },
 };
 
 module.exports = PannerModel;

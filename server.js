@@ -37,6 +37,7 @@ app.use(express.json());
 app.use("/api", require("./routes/userRoutes"));
 app.use('/api/panners', require("./routes/pannerRoutes"));
 app.use('/api/department', require("./routes/departmentRoutes"));
+app.use('/api/advertisement', require("./routes/advertisementRoutes"));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Example route to test Sentry error capture
 app.get("/debug-sentry", function mainHandler(req, res) {

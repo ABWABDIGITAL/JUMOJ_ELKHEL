@@ -224,9 +224,7 @@ const UserController = {
     // Extract userId from token (assuming it's sent in the authorization header)
     const accessToken = req.headers.authorization?.split(" ")[1];
     if (!accessToken) {
-      return res
-        .status(401)
-        .json(formatErrorResponse("Access token is required"));
+      return res.status(401).json(formatErrorResponse('Access token is required'));
     }
 
     try {
@@ -234,40 +232,20 @@ const UserController = {
       const userId = decoded.userId;
 
       // Validate required fields
-      if (
-        !userId ||
-        (name === undefined &&
-          email === undefined &&
-          phone === undefined &&
-          locationId === undefined)
-      ) {
-        return res
-          .status(400)
-          .json(formatErrorResponse("No update information provided"));
+      if (!userId || (name === undefined && email === undefined && phone === undefined && locationId === undefined)) {
+        return res.status(400).json(formatErrorResponse('No update information provided'));
       }
 
       // Update user and populate location
-      const updatedUser = await UserModel.updateUser(userId, {
-        name,
-        email,
-        phone,
-        locationId,
-      });
+      const updatedUser = await UserModel.updateUser(userId, { name, email, phone, locationId });
 
       if (updatedUser) {
-        res
-          .status(200)
-          .json(
-            formatSuccessResponse(
-              updatedUser,
-              "User contact information updated successfully"
-            )
-          );
+        res.status(200).json(formatSuccessResponse(updatedUser, 'User contact information updated successfully'));
       } else {
-        res.status(404).json(formatErrorResponse("User not found"));
+        res.status(404).json(formatErrorResponse('User not found'));
       }
     } catch (error) {
-      Sentry.captureException(error); // Capture error with Sentry
+      Sentry.captureException(error);  // Capture error with Sentry
       res.status(500).json(formatErrorResponse(error.message));
     }
   },

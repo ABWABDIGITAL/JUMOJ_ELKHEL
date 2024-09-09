@@ -62,42 +62,50 @@ const UserModel = {
     return result.rows[0];
   },
   // Get user by ID with location details (without sensitive info)
-  getUserById: async (userId) => {
-    const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.phone, u.location_id, 
-              l.name as location_name, 
-              l.area, 
-              l.city
+ // Get user by ID with location details and WhatsApp link
+ getUserById: async (userId) => {
+  const result = await pool.query(
+    `SELECT u.id, u.name, u.email, u.phone, u.location_id, 
+            l.name as location_name, 
+            l.area, 
+            l.city
+          
+     FROM users u
+     LEFT JOIN locations l ON u.location_id = l.id
+     WHERE u.id = $1`,
+    [userId]
+  );
 
-       FROM users u
-       LEFT JOIN locations l ON u.location_id = l.id
-       WHERE u.id = $1`,
-      [userId]
-    );
+  const user = result.rows[0];
+  
+  if (user) {
+    // Add WhatsApp link based on phone number
+    user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`;
+  }
 
-    return result.rows[0];
-  },
+  return user;
+},
 
-  // Update user contact information and locationId
-  updateUser: async (userId, { name, email, phone, locationId }) => {
-    const result = await pool.query(
-      `UPDATE users 
-       SET name = COALESCE($2, name), 
-           email = COALESCE($3, email), 
-           phone = COALESCE($4, phone), 
-           location_id = COALESCE($5, location_id) 
-       WHERE id = $1 
-       RETURNING id, name, email, phone, location_id`,
-      [userId, name, email, phone, locationId]
-    );
+// Update user contact information and locationId
+updateUser: async (userId, { name, email, phone, locationId }) => {
+  const result = await pool.query(
+    `UPDATE users 
+     SET name = COALESCE($2, name), 
+         email = COALESCE($3, email), 
+         phone = COALESCE($4, phone), 
+         location_id = COALESCE($5, location_id) 
+     WHERE id = $1 
+     RETURNING id, name, email, phone, location_id`,
+    [userId, name, email, phone, locationId]
+  );
 
-    if (result.rows[0]) {
-      // Fetch the user with populated location after update
-      return await UserModel.getUserById(userId);
-    }
+  if (result.rows[0]) {
+    // Fetch the user with populated location after update and include WhatsApp link
+    return await UserModel.getUserById(userId);
+  }
 
-    return null;
-  },
+  return null;
+},
 };
 
 module.exports = UserModel;

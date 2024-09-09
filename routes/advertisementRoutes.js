@@ -51,7 +51,7 @@ router.delete(
   "/advertisements/:id",
   AdvertisementController.deleteAdvertisement
 );
-router.get("/advertisements", AdvertisementController.getAllAdvertisements);
+router.get("/", AdvertisementController.getAllAdvertisements);
 router.get(
   "/advertisements/department/:departmentId",
   AdvertisementController.getAdvertisementsByDepartmentId

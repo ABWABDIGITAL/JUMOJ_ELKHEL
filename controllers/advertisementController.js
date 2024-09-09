@@ -8,32 +8,75 @@ const AdvertisementController = {
   // Create a new advertisement
   createAdvertisement: async (req, res) => {
     try {
-      const { title, description, price, departmentId, type, createdAt, endedAt } = req.body;
+      const {
+        title,
+        description,
+        price,
+        departmentId,
+        type,
+        createdAt,
+        endedAt,
+        marketName,
+        locationId, 
+        father,
+        classification,
+        age,
+        height,
+        priceType,
+      } = req.body;
 
-      // Check if files were uploaded
-      const image = req.files && req.files['image']
-        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`
-        : null;
+    // Check if files were uploaded
+    const image = req.files && req.files['image']
+    ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`:
+    null;
 
-      const videoUrl = req.files && req.files['video']
-        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files['video'][0].filename}`
-        : req.body.video; // Handle video link if provided via body
+      const videoUrl =
+        req.files && req.files["video"]
+          ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
+          : req.body.video; // Handle video link if provided via body
+
+      // Ensure price is in the correct format
+      const formattedPrice = parseFloat(price);
 
       // Call the model to save advertisement to DB
       const newAd = await AdvertisementModel.createAdvertisement(
-        title, description, price, departmentId, type, videoUrl, image, createdAt, endedAt
+        title,
+        description,
+        formattedPrice,
+        departmentId,
+        type,
+        videoUrl,
+        image,
+        createdAt,
+        endedAt,
+        marketName,
+        locationId, 
+        father,
+        classification,
+        age,
+        height,
+        priceType
       );
 
       // Return success response
-      return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
+      return res
+        .status(201)
+        .json(
+          formatSuccessResponse(newAd, "Advertisement created successfully")
+        );
     } catch (error) {
       // Log the full error for debugging
-      console.error('Error creating advertisement:', error);
+      console.error("Error creating advertisement:", error);
 
       // Return a more detailed error response
-      return res.status(500).json(formatErrorResponse("Error creating advertisement", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error creating advertisement", error.message)
+        );
     }
   },
+
   // Get advertisement by ID
   getAdvertisementById: async (req, res) => {
     const { id } = req.params;

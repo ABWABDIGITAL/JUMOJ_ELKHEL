@@ -14,6 +14,9 @@ router.post("/forgot-password", UserController.forgotPassword);
 
 
 router.post('/create-custom-token', UserController.createCustomToken);
+// Update user profile (Requires authentication)
+router.put('/auth/:userId', authenticateToken, UserController.updateUser);
+
 // Route to update user contact information
 router.put('/contact-info', UserController.updateUserContactInfo);
 

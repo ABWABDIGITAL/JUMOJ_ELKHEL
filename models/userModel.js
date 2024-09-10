@@ -1,5 +1,5 @@
-const pool = require("../config/db");
-const bcrypt = require("bcryptjs");
+const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 const UserModel = {
   // Create a new user with hashed password
@@ -61,51 +61,57 @@ const UserModel = {
     );
     return result.rows[0];
   },
-  // Get user by ID with location details (without sensitive info)
- // Get user by ID with location details and WhatsApp link
- getUserById: async (userId) => {
-  const result = await pool.query(
-    `SELECT u.id, u.name, u.email, u.phone, u.location_id, 
-            l.name as location_name, 
-            l.area, 
-            l.city
-          
-     FROM users u
-     LEFT JOIN locations l ON u.location_id = l.id
-     WHERE u.id = $1`,
-    [userId]
-  );
 
-  const user = result.rows[0];
-  
-  if (user) {
-    // Add WhatsApp link based on phone number
-    user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`;
-  }
+  // Get user by ID with location details and WhatsApp link
+  getUserByIdWithDetails: async (userId) => {
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, u.phone, u.location_id, u.identity, u.birthday, 
+              l.name as location_name, l.area, l.city
+       FROM users u
+       LEFT JOIN locations l ON u.location_id = l.id
+       WHERE u.id = $1`,
+      [userId]
+    );
 
-  return user;
-},
+    const user = result.rows[0];
+    
+    if (user) {
+      // Add WhatsApp link based on phone number
+      user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`;
+    }
 
-// Update user contact information and locationId
-updateUser: async (userId, { name, email, phone, locationId }) => {
-  const result = await pool.query(
-    `UPDATE users 
-     SET name = COALESCE($2, name), 
-         email = COALESCE($3, email), 
-         phone = COALESCE($4, phone), 
-         location_id = COALESCE($5, location_id) 
-     WHERE id = $1 
-     RETURNING id, name, email, phone, location_id`,
-    [userId, name, email, phone, locationId]
-  );
+    return user;
+  },
 
-  if (result.rows[0]) {
-    // Fetch the user with populated location after update and include WhatsApp link
-    return await UserModel.getUserById(userId);
-  }
+  // Update user contact information and locationId
+  updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password }) => {
+    let query = `UPDATE users SET 
+                  name = COALESCE($2, name), 
+                  email = COALESCE($3, email), 
+                  phone = COALESCE($4, phone), 
+                  identity = COALESCE($5, identity),
+                  birthday = COALESCE($6, birthday),
+                  location_id = COALESCE($7, location_id)`;
+    
+    const values = [userId, name, email, phone, identity, birthday, locationId];
+    
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      query += `, password = $8`;
+      values.push(hashedPassword);
+    }
+    
+    query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id`;
 
-  return null;
-},
+    const result = await pool.query(query, values);
+
+    if (result.rows[0]) {
+      // Fetch the user with populated location after update and include WhatsApp link
+      return await UserModel.getUserByIdWithDetails(userId);
+    }
+
+    return null;
+  },
 };
 
 module.exports = UserModel;

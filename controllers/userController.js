@@ -249,6 +249,27 @@ const UserController = {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
+  // Update user profile
+  updateUser: async (req, res) => {
+    const { userId } = req.params;
+    
+    const { name, email, phone, identity, birthday, locationId, password } = req.body;
+
+    try {
+      if (!userId) {
+        return res.status(400).json(formatErrorResponse('User ID is required'));
+      }
+
+      const updatedUser = await UserModel.updateUser(userId, { name, email, phone, identity, birthday, locationId, password });
+      if (updatedUser) {
+        res.status(200).json(formatSuccessResponse(updatedUser, 'User updated successfully'));
+      } else {
+        res.status(404).json(formatErrorResponse('User not found'));
+      }
+    } catch (error) {
+      res.status(500).json(formatErrorResponse(error.message));
+    }
+  }
 };
 
 module.exports = UserController;

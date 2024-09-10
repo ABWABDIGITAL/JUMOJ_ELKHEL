@@ -29,6 +29,40 @@ const StoreModel = {
   getAllStores: async () => {
     const result = await pool.query('SELECT * FROM stores');
     return result.rows;
+  },
+  // Get store by ID
+  getStoreById: async (id) => {
+    const result = await pool.query(
+      `SELECT id, name, location_id, time_of_works, image_url, file_urls
+       FROM stores
+       WHERE id = $1`,
+      [id]
+    );
+    
+    return result.rows[0]; // Return the store with image and files
+  },// Update store by ID with new image and files
+  updateStoreById: async ({ id, imageUrl, fileUrls }) => {
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const result = await client.query(
+        `UPDATE stores
+         SET image_url = $1, file_urls = $2
+         WHERE id = $3 RETURNING *`,
+        [imageUrl, JSON.stringify(fileUrls), id]
+      );
+
+      const store = result.rows[0];
+      await client.query('COMMIT');
+      return store;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 };
 

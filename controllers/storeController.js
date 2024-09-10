@@ -45,7 +45,23 @@ const StoreController = {
     } catch (error) {
       res.status(500).json(formatErrorResponse(error.message));
     }
-  }
+  },
+  //get storeById
+// Get store by ID (Public route)
+getStoreById: async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const store = await StoreModel.getStoreById(id);
+
+      if (store) {
+        res.status(200).json(formatSuccessResponse(store, 'Store retrieved successfully'));
+      } else {
+        res.status(404).json(formatErrorResponse('Store not found'));
+      }
+    } catch (error) {
+      res.status(500).json(formatErrorResponse(error.message));
+    }}
 };
 
 module.exports = StoreController;

@@ -42,8 +42,11 @@ const uploadMiddleware = upload.fields([
 
 // Create a new store (Requires authentication)
 router.post('/', authenticateToken, uploadMiddleware, StoreController.createStore);
+// Get store by ID (Public route)
+router.get('/:id', StoreController.getStoreById);
 
 // Get all stores (Public route)
 router.get('/', StoreController.getAllStores);
+
 
 module.exports = router;

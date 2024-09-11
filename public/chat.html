@@ -2,49 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  <script src="/socket.io/socket.io.js"></script> <!-- Load Socket.IO client -->
-  <style>
-    #chat { height: 300px; overflow-y: scroll; border: 1px solid black; padding: 10px; margin-bottom: 10px; }
-    #message { width: 80%; }
-    #userId { width: 80%; margin-bottom: 10px; }
-  </style>
+  <title>Socket.IO Chat</title>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>Chat Room</h1>
-  
-  <!-- Input for userId -->
-  <input id="userId" placeholder="Enter your user ID">
-
-  <!-- Chat box -->
-  <div id="chat"></div>
-
-  <!-- Input for message -->
-  <input id="message" placeholder="Type your message here...">
-  <button onclick="sendMessage()">Send</button>
-
+  <h1>Socket.IO Chat</h1>
   <script>
-    const socket = io(); // Connect to the server
+    const socket = io('http://localhost:3030'); // Ensure this matches the server port
 
-    // Listen for chat messages from the server
-    socket.on('chatMessage', (data) => {
-      const chatDiv = document.getElementById('chat');
-      chatDiv.innerHTML += `<p><strong>User ${data.userId}:</strong> ${data.message}</p>`;
-      chatDiv.scrollTop = chatDiv.scrollHeight; // Auto-scroll to the bottom
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
     });
 
-    // Function to send message
-    function sendMessage() {
-      const message = document.getElementById('message').value;
-      const userId = document.getElementById('userId').value;
-      if (message && userId) {
-        socket.emit('chatMessage', { message, userId }); // Send structured message with userId
-        document.getElementById('message').value = ''; // Clear input field
-      } else {
-        alert('Please enter both your message and user ID');
-      }
-    }
+    socket.on('chatMessage', (data) => {
+      console.log('Chat message received:', data);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Connection Error:', error);
+    });
+
+    socket.on('error', (error) => {
+      console.error('Socket Error:', error);
+    });
+
+    // Example of sending a chat message
+    socket.emit('chatMessage', { message: 'Hello, world!', userId: 1 });
   </script>
 </body>
 </html>

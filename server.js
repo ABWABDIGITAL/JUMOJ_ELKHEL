@@ -4,6 +4,7 @@ const { sequelize } = require('./models/pannerModel');
 const i18next = require("i18next");
 const i18nextMiddleware = require("i18next-http-middleware");
 const Backend = require("i18next-fs-backend");
+const notificationRoutes = require('./routes/notificationRoutes');
 const path = require('path');
 const http = require('http'); // Import http module
 const { Server } = require('socket.io'); // Import Socket.IO
@@ -67,6 +68,12 @@ app.use('/api/location', require("./routes/locationRoutes"));
 app.use('/supplies', require("./routes/supplyRoutes"));
 app.use('/trainings', require("./routes/trainingRoutes"));
 app.use('/stores', require("./routes/storeRoutes"));
+
+
+// Your existing middleware and routes
+
+app.use('/api/notifications', notificationRoutes);
+
 app.use('/chat', createChatRoutes(pool, io)); // Inject pool and io into chat routes
 
 // Middleware to serve static files from the "public" directory

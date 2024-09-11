@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <script src="/socket.io/socket.io.js"></script> <!-- Load Socket.IO client -->
+  <style>
+    #chat { height: 300px; overflow-y: scroll; border: 1px solid black; padding: 10px; margin-bottom: 10px; }
+    #message { width: 80%; }
+    #userId { width: 80%; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Chat Room</h1>
+  
+  <!-- Input for userId -->
+  <input id="userId" placeholder="Enter your user ID">
+
+  <!-- Chat box -->
+  <div id="chat"></div>
+
+  <!-- Input for message -->
+  <input id="message" placeholder="Type your message here...">
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const socket = io(); // Connect to the server
+
+    // Listen for chat messages from the server
+    socket.on('chatMessage', (data) => {
+      const chatDiv = document.getElementById('chat');
+      chatDiv.innerHTML += `<p><strong>User ${data.userId}:</strong> ${data.message}</p>`;
+      chatDiv.scrollTop = chatDiv.scrollHeight; // Auto-scroll to the bottom
+    });
+
+    // Function to send message
+    function sendMessage() {
+      const message = document.getElementById('message').value;
+      const userId = document.getElementById('userId').value;
+      if (message && userId) {
+        socket.emit('chatMessage', { message, userId }); // Send structured message with userId
+        document.getElementById('message').value = ''; // Clear input field
+      } else {
+        alert('Please enter both your message and user ID');
+      }
+    }
+  </script>
+</body>
+</html>

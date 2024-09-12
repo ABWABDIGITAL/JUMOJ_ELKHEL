@@ -14,7 +14,9 @@ const AdvertisementModel = {
       SELECT a.*, 
              d.name AS department_name, 
              l.name AS location_name, 
-             l.city AS location_city
+             l.city AS location_city, 
+             l.latitude, 
+             l.longitude 
       FROM advertisements a
       JOIN departments d ON a.department_id = d.id
       JOIN locations l ON a.location_id = l.id

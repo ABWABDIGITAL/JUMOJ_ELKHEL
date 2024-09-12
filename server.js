@@ -68,11 +68,10 @@ app.use('/api/location', require("./routes/locationRoutes"));
 app.use('/supplies', require("./routes/supplyRoutes"));
 app.use('/trainings', require("./routes/trainingRoutes"));
 app.use('/stores', require("./routes/storeRoutes"));
-
-
-// Your existing middleware and routes
-
+app.use('/stores', require("./routes/storeRoutes"));
+app.use('/promotions', require("./routes/promotionRoutes"));
 app.use('/api/notifications', notificationRoutes);
+
 
 app.use('/chat', createChatRoutes(pool, io)); // Inject pool and io into chat routes
 

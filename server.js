@@ -96,7 +96,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3090;
+const PORT = process.env.PORT || 3030;
 server.listen(PORT, () => { // Use the server variable instead of app.listen
   console.log(`Server is running on port ${PORT}`);
 });

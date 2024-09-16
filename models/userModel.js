@@ -17,13 +17,18 @@ const UserModel = {
     return result.rows[0];
   },
 
- // Fetch a user by phone and key (country code)
-getUserByPhoneAndKey: async (phone, key) => {
-  const query = 'SELECT * FROM users WHERE phone = $1 AND key = $2 LIMIT 1';
-  const result = await pool.query(query, [phone, key]);
-  return result.rows[0];
-},
-
+  // Get a user by phone number
+  getUserByPhone: async (phone) => {
+    const result = await pool.query(`SELECT * FROM users WHERE phone = $1`, [
+      phone,
+    ]);
+    return result.rows[0];
+  },
+  getUserByPhoneAndKey: async (phone, key) => {
+    const query = 'SELECT * FROM users WHERE phone = $1 AND key = $2 LIMIT 1';
+    const result = await pool.query(query, [phone, key]);
+    return result.rows[0];
+  },
   // Get a user by key
   getUserByKey: async (key) => {
     const result = await pool.query(`SELECT * FROM users WHERE key = $1`, [
@@ -31,6 +36,13 @@ getUserByPhoneAndKey: async (phone, key) => {
     ]);
     return result.rows[0];
   },
+
+setOtpForUser: async (userId, otp, otpExpires, otpLastSent) => {
+  const query = `UPDATE users
+   SET otp = $1, otp_expires = $2, otp_last_sent = $3
+   WHERE id = $4`;
+  await pool.query(query, [otp, otpExpires, otpLastSent, userId]);
+},
 
   // Update user status to 'active' after OTP verification
   updateUserStatus: async (userId, status) => {

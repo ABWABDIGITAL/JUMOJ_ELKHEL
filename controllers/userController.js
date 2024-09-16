@@ -215,53 +215,62 @@ const UserController = {
     }
   },
 
-  forgotPassword: async (req, res) => {
-    const { phone, key } = req.body;
-  
-    // Validate phone and key
-    if (!phone || !key) {
+ forgotPassword :async (req, res) => {
+  const { phone, key } = req.body;
+
+  // Validate phone and key
+  if (!phone || !key) {
+    return res
+      .status(400)
+      .json(formatErrorResponse("Phone number and country code are required"));
+  }
+
+  // Example phone number format validation (adjust according to your requirements)
+  // We will combine key and phone, allowing only digits and an optional "+" at the start
+  const phoneNumber = `${key}${phone}`;
+  const phoneRegex = /^\+?\d{10,15}$/;
+
+  if (!phoneRegex.test(phoneNumber)) {
+    return res.status(400).json(formatErrorResponse("Invalid phone number format"));
+  }
+
+  try {
+    const user = await UserModel.getUserByPhone(phone);
+    if (!user) {
+      return res.status(404).json(formatErrorResponse("User not found"));
+    }
+
+    const nowInSeconds = Math.floor(Date.now() / 1000); // Convert milliseconds to seconds
+
+    // Check if an OTP was already sent within the last 30 seconds
+    if (user.otpLastSent && (nowInSeconds - user.otpLastSent) < 30) {
       return res
-        .status(400)
-        .json(formatErrorResponse("Phone number and country code are required"));
+        .status(429)
+        .json(formatErrorResponse("Please wait 30 seconds before resending the OTP."));
     }
+
+    // Generate a 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Always a 4-digit OTP
+    const otpExpiresInSeconds = nowInSeconds + 3600; // OTP valid for 1 hour (3600 seconds)
+
+    // Log OTP sending (for debugging purposes)
+    console.log(`Generated OTP for phone ${phoneNumber}: ${otp}`);
+
+    // Save OTP, expiration time, and last sent time in seconds
+    await UserModel.setOtpForUser(user.id, otp, otpExpiresInSeconds, nowInSeconds);
+
+    res.status(200).json(
+      formatSuccessResponse(
+        { message: "OTP sent successfully to your phone. Please verify your OTP. " }
+      )
+    );
+  } catch (error) {
+    Sentry.captureException(error); // Capture error with Sentry
+    res.status(500).json(formatErrorResponse("An error occurred while processing your request"));
+  }
+},
+
   
-    try {
-      const user = await UserModel.getUserByPhone(phone);
-      if (!user) {
-        return res.status(404).json(formatErrorResponse("User not found"));
-      }
-  
-      // Check if an OTP was already sent within the last 30 seconds
-      const now = Date.now();
-      const otpLastSentInSeconds = Math.floor(now / 1000); // Convert milliseconds to seconds
-  
-      // Check the last OTP sent time (also in seconds) and compare
-      if (user.otpLastSent && otpLastSentInSeconds - user.otpLastSent < 30) {
-        return res
-          .status(429) // Too many requests
-          .json(formatErrorResponse("Please wait 30 seconds before resending the OTP."));
-      }
-  
-      // Generate a fixed 4-digit OTP
-      const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Always a 4-digit OTP
-      const otpExpiresInSeconds = otpLastSentInSeconds + 3600; // OTP valid for 1 hour (3600 seconds)
-  
-      // Send OTP to the user's phone (mocked for now)
-      console.log(`OTP for ${phone}: ${otp}`);
-  
-      // Save OTP, OTP expiration, and OTP last sent time in seconds
-      await UserModel.setOtpForUser(user.id, otp, otpExpiresInSeconds, otpLastSentInSeconds);
-  
-      res.status(200).json(
-        formatSuccessResponse(
-          { message: "OTP sent successfully to your phone. Please verify your OTP." }
-        )
-      );
-    } catch (error) {
-      Sentry.captureException(error); // Capture error with Sentry
-      res.status(500).json(formatErrorResponse(error.message));
-    }
-  },
   
 
   createCustomToken: (req, res) => {

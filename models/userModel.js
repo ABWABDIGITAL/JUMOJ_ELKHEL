@@ -1,33 +1,46 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const UserModel = {
+
   // Create a new user with hashed password
-  createUser: async (name, email, phone, password) => {
-    if (phone.length > 50) {
-      throw new Error('Phone number is too long');
-    }
+  
 
+const UserModel = {
+  // Create a user with phone, key, pending status, and OTP
+  createUser: async (name, phone, key, password, otp, status) => {
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const result = await pool.query(
-      `INSERT INTO users (name, email, phone, password)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [name, email, phone, hashedPassword]
+      `INSERT INTO users (name, phone, key, password, otp, status) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, phone, key, hashedPassword, otp, status]
     );
-
     return result.rows[0];
   },
 
-  // Get user by phone number
-  getUserByPhone: async (phone) => {
-    if (!phone) {
-      throw new Error('Phone number is required');
-    }
+ // Fetch a user by phone and key (country code)
+getUserByPhoneAndKey: async (phone, key) => {
+  const query = 'SELECT * FROM users WHERE phone = $1 AND key = $2 LIMIT 1';
+  const result = await pool.query(query, [phone, key]);
+  return result.rows[0];
+},
 
-    const result = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+  // Get a user by key
+  getUserByKey: async (key) => {
+    const result = await pool.query(`SELECT * FROM users WHERE key = $1`, [
+      key,
+    ]);
     return result.rows[0];
   },
+
+  // Update user status to 'active' after OTP verification
+  updateUserStatus: async (userId, status) => {
+    const result = await pool.query(
+      `UPDATE users SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, userId]
+    );
+    return result.rows[0];
+  },
+
 
   // Get user by email address
   getUserByEmail: async (email) => {

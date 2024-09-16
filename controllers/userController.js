@@ -1,4 +1,3 @@
-// controllers/userController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/userModel");
@@ -16,59 +15,107 @@ const {
 
 const UserController = {
   createUser: async (req, res) => {
-    const { name, email, phone, password, confirmPassword } = req.body;
-
+    const { name, key, phone, password, confirmPassword } = req.body;
+  
     // Validate required fields
-    if (!name || !email || !phone || !password || !confirmPassword) {
+    if (!name || !key || !phone || !password || !confirmPassword) {
       return res
         .status(400)
         .json(formatErrorResponse("All fields are required"));
     }
-
-    // Validate length constraints
-    if (phone.length > 50) {
-      return res
-        .status(400)
-        .json(formatErrorResponse("Phone number is too long"));
+  
+    // Validate the phone and key lengths
+    if (phone.length > 15 || isNaN(phone)) {
+      return res.status(400).json(formatErrorResponse("Invalid phone number"));
     }
-    if (email.length > 100) {
-      return res.status(400).json(formatErrorResponse("Email is too long"));
+    if (key.length > 5 || !key.startsWith('+')) {
+      return res.status(400).json(formatErrorResponse("Invalid country code"));
     }
-
+  
     // Check if passwords match
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json(formatErrorResponse("Passwords do not match"));
+      return res.status(400).json(formatErrorResponse("Passwords do not match"));
     }
-
+  
     try {
-      // Check if the email already exists
-      const existingUser = await UserModel.getUserByEmail(email);
+      // Check if the phone number already exists
+      const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
       if (existingUser) {
-        return res
-          .status(409)
-          .json(formatErrorResponse("Email is already in use"));
+        return res.status(409).json(formatErrorResponse("Phone number is already in use"));
       }
+  
+      // Save OTP (hardcoded for testing)
+      const otp = "1234";
+  
+      // Create the user with 'pending' status until OTP is verified
+      const user = await UserModel.createUser({
+        name,
+        key,
+        phone,
+        password,
+        otp,
+        status: 'pending'
+      });
+  
+      res.status(201).json(
+        formatSuccessResponse(
+          null,
+          "User created successfully. Please verify your phone number using the OTP sent."
+        )
+      );
+    } catch (error) {
+      Sentry.captureException(error);
+      res.status(500).json(formatErrorResponse(error.message));
+    }
+  },
+  
 
-      // Create the user
-      const user = await UserModel.createUser(name, email, phone, password);
-
-      // Generate tokens
-      const accessToken = generateAccessToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      res
-        .status(201)
-        .json(
+  verifyOtp: async (req, res) => {
+    const { phone, key, otp } = req.body;
+  
+    // Validate fields
+    if (!phone || !key || !otp) {
+      return res.status(400).json(formatErrorResponse("Phone, country code, and OTP are required"));
+    }
+  
+    try {
+      // Fetch the user by phone number and country key
+      const user = await UserModel.getUserByPhoneAndKey(phone, key);
+  
+      if (!user) {
+        return res.status(404).json(formatErrorResponse("User not found"));
+      }
+  
+      // Check if the OTP matches the fixed OTP
+      if (otp === "1234") {
+        // If OTP is correct, activate the user
+        const userId = user.id; 
+        await UserModel.updateUserStatus(userId, "active");
+  
+        // Generate access and refresh tokens
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken( user);
+  
+        // Send response with user details and tokens
+        return res.status(200).json(
           formatSuccessResponse(
-            { user, accessToken, refreshToken },
-            "User created successfully"
+            {
+              username: user.name,
+              phone: user.phone,
+              key: user.key,  // Country key
+              type: user.type || 'user',  // Default to 'user'
+              accessToken,
+              refreshToken
+            },
+            "OTP verified successfully. User account is now active."
           )
         );
+      } else {
+        return res.status(400).json(formatErrorResponse("Invalid OTP"));
+      }
     } catch (error) {
-      Sentry.captureException(error); // Capture error with Sentry
-      res.status(500).json(formatErrorResponse(error.message));
+      Sentry.captureException(error);
+      return res.status(500).json(formatErrorResponse(error.message));
     }
   },
 
@@ -224,7 +271,9 @@ const UserController = {
     // Extract userId from token (assuming it's sent in the authorization header)
     const accessToken = req.headers.authorization?.split(" ")[1];
     if (!accessToken) {
-      return res.status(401).json(formatErrorResponse('Access token is required'));
+      return res
+        .status(401)
+        .json(formatErrorResponse("Access token is required"));
     }
 
     try {
@@ -232,44 +281,77 @@ const UserController = {
       const userId = decoded.userId;
 
       // Validate required fields
-      if (!userId || (name === undefined && email === undefined && phone === undefined && locationId === undefined)) {
-        return res.status(400).json(formatErrorResponse('No update information provided'));
+      if (
+        !userId ||
+        (name === undefined &&
+          email === undefined &&
+          phone === undefined &&
+          locationId === undefined)
+      ) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("No update information provided"));
       }
 
       // Update user and populate location
-      const updatedUser = await UserModel.updateUser(userId, { name, email, phone, locationId });
+      const updatedUser = await UserModel.updateUser(userId, {
+        name,
+        email,
+        phone,
+        locationId,
+      });
 
       if (updatedUser) {
-        res.status(200).json(formatSuccessResponse(updatedUser, 'User contact information updated successfully'));
+        res
+          .status(200)
+          .json(
+            formatSuccessResponse(
+              updatedUser,
+              "User contact information updated successfully"
+            )
+          );
       } else {
-        res.status(404).json(formatErrorResponse('User not found'));
+        res.status(404).json(formatErrorResponse("User not found"));
       }
     } catch (error) {
-      Sentry.captureException(error);  // Capture error with Sentry
+      Sentry.captureException(error); // Capture error with Sentry
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
   // Update user profile
   updateUser: async (req, res) => {
     const { userId } = req.params;
-    
-    const { name, email, phone, identity, birthday, locationId, password } = req.body;
+
+    const { name, email, phone, identity, birthday, locationId, password } =
+      req.body;
 
     try {
       if (!userId) {
-        return res.status(400).json(formatErrorResponse('User ID is required'));
+        return res.status(400).json(formatErrorResponse("User ID is required"));
       }
 
-      const updatedUser = await UserModel.updateUser(userId, { name, email, phone, identity, birthday, locationId, password });
+      const updatedUser = await UserModel.updateUser(userId, {
+        name,
+        email,
+        phone,
+        identity,
+        birthday,
+        locationId,
+        password,
+      });
       if (updatedUser) {
-        res.status(200).json(formatSuccessResponse(updatedUser, 'User updated successfully'));
+        res
+          .status(200)
+          .json(
+            formatSuccessResponse(updatedUser, "User updated successfully")
+          );
       } else {
-        res.status(404).json(formatErrorResponse('User not found'));
+        res.status(404).json(formatErrorResponse("User not found"));
       }
     } catch (error) {
       res.status(500).json(formatErrorResponse(error.message));
     }
-  }
+  },
 };
 
 module.exports = UserController;

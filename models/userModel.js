@@ -7,15 +7,24 @@ const bcrypt = require('bcryptjs');
 
 const UserModel = {
   // Create a user with phone, key, pending status, and OTP
-  createUser: async (name, phone, key, password, otp, status) => {
-    const hashedPassword = await bcrypt.hash(password, 10);
+  createUser: async (name, phone, email, key, password, otp, status) => {
+    // Log the values being passed, especially `password`
+    console.log({ name, phone, email, key, password, otp, status });
+
+    if (!password) {
+      throw new Error("Password is undefined or empty");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);  // bcrypt will hash the password
     const result = await pool.query(
-      `INSERT INTO users (name, phone, key, password, otp, status) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, phone, key, hashedPassword, otp, status]
+      `INSERT INTO users (name, phone, email, key, password, otp, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [name, phone, email, key, hashedPassword, otp, status]
     );
     return result.rows[0];
-  },
+  }
+,
+  
 
   // Get a user by phone number
   getUserByPhone: async (phone) => {
@@ -37,12 +46,15 @@ const UserModel = {
     return result.rows[0];
   },
 
-setOtpForUser: async (userId, otp, otpExpires, otpLastSent) => {
-  const query = `UPDATE users
-   SET otp = $1, otp_expires = $2, otp_last_sent = $3
-   WHERE id = $4`;
-  await pool.query(query, [otp, otpExpires, otpLastSent, userId]);
-},
+  setOtpForUser: async (userId, otp, otpExpiresInSeconds, otpLastSent) => {
+    // Convert Unix timestamp to JavaScript Date object
+    const otpExpires = new Date(otpExpiresInSeconds * 1000); // Multiply by 1000 to convert seconds to milliseconds
+
+    const query = `UPDATE users
+                   SET otp = $1, otp_expires = $2, otp_last_sent = $3
+                   WHERE id = $4`;
+    await pool.query(query, [otp, otpExpires, new Date(otpLastSent * 1000), userId]);
+  },
 
   // Update user status to 'active' after OTP verification
   updateUserStatus: async (userId, status) => {

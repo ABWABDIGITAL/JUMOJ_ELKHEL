@@ -5,8 +5,8 @@ const { formatSuccessResponse, formatErrorResponse } = require('../utils/respons
 const SupplyController = {
   // Create a new supply with multiple images
   createSupply: async (req, res) => {
-    const { name, description, price, age, health, mother, father, locationId } = req.body;
-    const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/subblies/${file.filename}`) : [];
+    const { name, description, locationId, comment, advId } = req.body;
+    const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
     const accessToken = req.headers.authorization?.split(" ")[1];
     if (!accessToken) {
@@ -18,19 +18,16 @@ const SupplyController = {
       const userId = decoded.userId;
 
       // Validate required fields
-      if (!name || !price || !locationId) {
-        return res.status(400).json({ success: false, message: 'Name, price, and locationId are required' });
+      if (!name || !locationId || !advId) {
+        return res.status(400).json({ success: false, message: 'Name, advId, and locationId are required' });
       }
 
       // Create the supply
       const supply = await SuppliesModel.createSupply({
         name,
         description,
-        price,
-        age,
-        health,
-        mother,
-        father,
+        comment,   // New field for the comment
+        advId,     // New field for the advId
         userId,
         locationId,
         images
@@ -57,6 +54,7 @@ const SupplyController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
+
   // Create a review for a supply
   createReview: async (req, res) => {
     const { supplyId, rating, comment } = req.body;
@@ -88,8 +86,6 @@ const SupplyController = {
       res.status(500).json({ success: false, message: error.message });
     }
   }
-
 };
-
 
 module.exports = SupplyController;

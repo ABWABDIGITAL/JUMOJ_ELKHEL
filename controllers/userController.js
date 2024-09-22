@@ -17,52 +17,23 @@ const UserController = {
   createUser: async (req, res) => {
     const { name, key, email, phone, password, confirmPassword } = req.body;
 
-    // Validate required fields
     if (!name || !key || !email || !phone || !password || !confirmPassword) {
-      return res
-        .status(400)
-        .json(formatErrorResponse("All fields are required"));
+      return res.status(400).json(formatErrorResponse("All fields are required"));
     }
 
-    // Check if passwords match
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json(formatErrorResponse("Passwords do not match"));
+      return res.status(400).json(formatErrorResponse("Passwords do not match"));
     }
 
     try {
       const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
       if (existingUser) {
-        return res
-          .status(409)
-          .json(formatErrorResponse("Phone number is already in use"));
+        return res.status(409).json(formatErrorResponse("Phone number is already in use"));
       }
 
-      const otp = "1234"; // Hardcoded OTP for testing
+      const user = await UserModel.createUser(name, phone, email, key, password, "pending");
 
-      // Log user creation parameters for debugging
-      console.log({ name, key, email, phone, password, otp });
-
-      // Call createUser with the correct parameters
-      const user = await UserModel.createUser(
-        name,
-        phone,
-        email,
-        key,
-        password,
-        otp,
-        "pending"
-      );
-
-      res
-        .status(201)
-        .json(
-          formatSuccessResponse(
-            null,
-            "User created successfully. Please verify your phone number using the OTP sent."
-          )
-        );
+      res.status(201).json(formatSuccessResponse(null, "User created successfully. Please verify your phone number using the OTP sent."));
     } catch (error) {
       console.error("Error creating user:", error.message);
       res.status(500).json(formatErrorResponse("An internal error occurred"));

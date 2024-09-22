@@ -1,31 +1,26 @@
-const pool = require('../config/db');
-const bcrypt = require('bcryptjs');
+const pool = require("../config/db");
+const bcrypt = require("bcryptjs");
 
-
-  // Create a new user with hashed password
-  
+// Create a new user with hashed password
 
 const UserModel = {
   // Create a user with phone, key, pending status, and OTP
-  createUser: async (name, phone, email, key, password, otp, status) => {
+  createUser: async (name, phone, email, key, password,  status) => {
     // Log the values being passed, especially `password`
-    console.log({ name, phone, email, key, password, otp, status });
+    console.log({ name, phone, email, key, password,  status });
 
     if (!password) {
       throw new Error("Password is undefined or empty");
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);  // bcrypt will hash the password
+    const hashedPassword = await bcrypt.hash(password, 10); // bcrypt will hash the password
     const result = await pool.query(
-      `INSERT INTO users (name, phone, email, key, password, otp, status) 
+      `INSERT INTO users (name, phone, email, key, password,  status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [name, phone, email, key, hashedPassword, otp, status]
+      [name, phone, email, key, hashedPassword, status]
     );
     return result.rows[0];
-  }
-,
-  
-
+  },
   // Get a user by phone number
   getUserByPhone: async (phone) => {
     const result = await pool.query(`SELECT * FROM users WHERE phone = $1`, [
@@ -34,7 +29,7 @@ const UserModel = {
     return result.rows[0];
   },
   getUserByPhoneAndKey: async (phone, key) => {
-    const query = 'SELECT * FROM users WHERE phone = $1 AND key = $2 LIMIT 1';
+    const query = "SELECT * FROM users WHERE phone = $1 AND key = $2 LIMIT 1";
     const result = await pool.query(query, [phone, key]);
     return result.rows[0];
   },
@@ -53,7 +48,12 @@ const UserModel = {
     const query = `UPDATE users
                    SET otp = $1, otp_expires = $2, otp_last_sent = $3
                    WHERE id = $4`;
-    await pool.query(query, [otp, otpExpires, new Date(otpLastSent * 1000), userId]);
+    await pool.query(query, [
+      otp,
+      otpExpires,
+      new Date(otpLastSent * 1000),
+      userId,
+    ]);
   },
 
   // Update user status to 'active' after OTP verification
@@ -65,10 +65,11 @@ const UserModel = {
     return result.rows[0];
   },
 
-
   // Get user by email address
   getUserByEmail: async (email) => {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
     return result.rows[0];
   },
 
@@ -76,14 +77,14 @@ const UserModel = {
   resetPassword: async (userId, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query(
-      'UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2',
+      "UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2",
       [hashedPassword, userId]
     );
   },
 
   // Get user by ID
   getUserById: async (id) => {
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
     return result.rows[0];
   },
 
@@ -111,17 +112,20 @@ const UserModel = {
     );
 
     const user = result.rows[0];
-    
+
     if (user) {
       // Add WhatsApp link based on phone number
-      user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`;
+      user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, "")}`;
     }
 
     return user;
   },
 
   // Update user contact information and locationId
-  updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password }) => {
+  updateUser: async (
+    userId,
+    { name, email, phone, identity, birthday, locationId, password }
+  ) => {
     let query = `UPDATE users SET 
                   name = COALESCE($2, name), 
                   email = COALESCE($3, email), 
@@ -129,15 +133,15 @@ const UserModel = {
                   identity = COALESCE($5, identity),
                   birthday = COALESCE($6, birthday),
                   location_id = COALESCE($7, location_id)`;
-    
+
     const values = [userId, name, email, phone, identity, birthday, locationId];
-    
+
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       query += `, password = $8`;
       values.push(hashedPassword);
     }
-    
+
     query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id`;
 
     const result = await pool.query(query, values);

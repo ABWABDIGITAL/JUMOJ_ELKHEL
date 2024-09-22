@@ -1,17 +1,17 @@
 const express = require("express");
 const Sentry = require("@sentry/node");
+const cors = require("cors"); // Import CORS middleware
 const { sequelize } = require("./models/pannerModel");
 const i18next = require("i18next");
 const i18nextMiddleware = require("i18next-http-middleware");
 const Backend = require("i18next-fs-backend");
 const notificationRoutes = require("./routes/notificationRoutes");
 const path = require("path");
-const http = require("http"); // Import http module
-const { Server } = require("socket.io"); // Import Socket.IO
-const pool = require("./config/db"); // Database connection pool
-const createChatRoutes = require("./routes/chatRoutes"); // Import the enhanced chat routes
+const http = require("http");
+const { Server } = require("socket.io");
+const pool = require("./config/db");
+const createChatRoutes = require("./routes/chatRoutes");
 
-// Initialize Sentry
 Sentry.init({
   dsn: "https://5074dd1d7898588b0a66fcebdd9d3221@o4507893403418624.ingest.de.sentry.io/4507893417312336",
   tracesSampleRate: 1.0,
@@ -19,8 +19,8 @@ Sentry.init({
 });
 
 const app = express();
-const server = http.createServer(app); // Create HTTP server for both Express and Socket.IO
-const io = new Server(server); // Initialize Socket.IO on top of the server
+const server = http.createServer(app);
+const io = new Server(server);
 
 // Initialize i18next
 i18next
@@ -37,6 +37,9 @@ i18next
 // Middleware for i18next
 app.use(i18nextMiddleware.handle(i18next));
 
+// Enable CORS for all routes
+app.use(cors()); // This will allow all origins. You can configure it further if needed.
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
@@ -44,16 +47,12 @@ app.use(express.json());
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  // Listen for structured chat message with message and userId
   socket.on("chatMessage", (data) => {
     const { message, userId } = data;
     console.log(`User ${userId} sent message: ${message}`);
-
-    // Broadcast the structured message to all connected clients
     io.emit("chatMessage", { message, userId });
   });
 
-  // Handle disconnection
   socket.on("disconnect", () => {
     console.log("A user disconnected");
   });
@@ -68,35 +67,28 @@ app.use("/api/location", require("./routes/locationRoutes"));
 app.use("/supplies", require("./routes/supplyRoutes"));
 app.use("/trainings", require("./routes/trainingRoutes"));
 app.use("/stores", require("./routes/storeRoutes"));
-app.use("/stores", require("./routes/storeRoutes"));
 app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("/api/notifications", notificationRoutes);
 
-app.use("/chat", createChatRoutes(pool, io)); // Inject pool and io into chat routes
+app.use("/chat", createChatRoutes(pool, io));
 
-// Middleware to serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
-// Example route to test Sentry error capture
 app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");
 });
 
 // Custom error handler for any other errors
 app.use((err, req, res, next) => {
-  // Capture the exception with Sentry
   Sentry.captureException(err);
-
-  // Send a response to the client
   res.status(500).json({
     success: false,
-    message: req.t("error_message"), // Localized error message
+    message: req.t("error_message"),
   });
 });
 
 // Start the server
 const PORT = process.env.PORT || 3090;
 server.listen(PORT, () => {
-  // Use the server variable instead of app.listen
   console.log(`Server is running on port ${PORT}`);
 });

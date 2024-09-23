@@ -71,7 +71,7 @@ app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/chat", createChatRoutes(pool, io));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/debug-sentry", function mainHandler(req, res) {

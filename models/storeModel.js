@@ -25,23 +25,61 @@ const StoreModel = {
     }
   },
 
-  // Get all stores
-  getAllStores: async () => {
-    const result = await pool.query('SELECT * FROM stores');
-    return result.rows;
-  },
-
-  // Get store by ID
-  getStoreById: async (id) => {
-    const result = await pool.query(
-      `SELECT id, name, location_id, time_of_works, image_url, file_urls
-       FROM stores
-       WHERE id = $1`,
-      [id]
-    );
+ 
+    // Get store by ID with location details
+    getStoreById: async (id) => {
+      const result = await pool.query(
+        `SELECT 
+            s.id, 
+            s.name, 
+            s.time_of_works, 
+            s.image_url, 
+            s.file_urls, 
+            s.created_at,
+  
+            -- Location details
+            l.id as location_id, 
+            l.name as location_name, 
+            l.city, 
+            l.area, 
+            l.latitude, 
+            l.longitude
+  
+         FROM stores s
+         LEFT JOIN locations l ON s.location_id = l.id  -- Join on location_id
+         WHERE s.id = $1`,
+        [id]
+      );
+      
+      return result.rows[0]; // Return store with location details
+    },
+  
+    // Get all stores with location details
+    getAllStores: async () => {
+      const result = await pool.query(
+        `SELECT 
+            s.id, 
+            s.name, 
+            s.time_of_works, 
+            s.image_url, 
+            s.file_urls, 
+            s.created_at,
+            
+            -- Location details
+            l.id as location_id, 
+            l.name as location_name, 
+            l.city, 
+            l.area, 
+            l.latitude, 
+            l.longitude
+  
+         FROM stores s
+         LEFT JOIN locations l ON s.location_id = l.id` // Join on location_id
+      );
+  
+      return result.rows; // Return all stores with location details
     
-    return result.rows[0]; // Return the store with image and files
-  },
+  },  
 
   // Update store by ID with new image and files
   updateStoreById: async ({ id, imageUrl, fileUrls }) => {

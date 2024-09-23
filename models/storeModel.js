@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 const StoreModel = {
   // Create new store with image and files
-  createStore: async ({ name, locationId, timeOfWorks, imageUrl, fileUrls }) => {
+  createStore: async ({ name, locationId, timeOfWorks = 'Always Open', imageUrl, fileUrls = [] }) => {
     const client = await pool.connect();
 
     try {
@@ -30,6 +30,7 @@ const StoreModel = {
     const result = await pool.query('SELECT * FROM stores');
     return result.rows;
   },
+
   // Get store by ID
   getStoreById: async (id) => {
     const result = await pool.query(
@@ -40,7 +41,9 @@ const StoreModel = {
     );
     
     return result.rows[0]; // Return the store with image and files
-  },// Update store by ID with new image and files
+  },
+
+  // Update store by ID with new image and files
   updateStoreById: async ({ id, imageUrl, fileUrls }) => {
     const client = await pool.connect();
 

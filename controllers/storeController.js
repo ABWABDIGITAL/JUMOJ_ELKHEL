@@ -22,11 +22,14 @@ const StoreController = {
         return res.status(400).json(formatErrorResponse('Name and locationId are required'));
       }
 
+      // Default timeOfWorks if not provided
+      const formattedTimeOfWorks = timeOfWorks || 'Always Open';
+
       // Create the store
       const store = await StoreModel.createStore({
         name,
         locationId,
-        timeOfWorks,
+        timeOfWorks: formattedTimeOfWorks, // Store the provided time or the default
         imageUrl, // Store the image URL
         fileUrls // Store the file URLs
       });
@@ -46,9 +49,9 @@ const StoreController = {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
-  //get storeById
-// Get store by ID (Public route)
-getStoreById: async (req, res) => {
+
+  // Get store by ID
+  getStoreById: async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -61,7 +64,8 @@ getStoreById: async (req, res) => {
       }
     } catch (error) {
       res.status(500).json(formatErrorResponse(error.message));
-    }}
+    }
+  }
 };
 
 module.exports = StoreController;

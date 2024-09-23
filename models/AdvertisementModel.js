@@ -25,6 +25,8 @@ const AdvertisementModel = {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
       [title, description, price, departmentId, type, videoUrl, image, createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType]
     );
+    
+
 
     // Fetch the full advertisement details with populated department and location info
     const adWithDetails = await pool.query(

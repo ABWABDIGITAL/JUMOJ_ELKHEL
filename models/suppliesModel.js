@@ -94,7 +94,53 @@ getSupplyById: async (supplyId) => {
 
   return result.rows[0];
 },
+getAllSupplies: async ({ page = 1, limit = 10 }) => {
+  const offset = (page - 1) * limit;
 
+  const result = await pool.query(
+    `SELECT 
+        s.id, 
+        s.name, 
+        s.description, 
+        s.comment, 
+        s.adv_id, 
+        s.commission_rate,
+        s.created_at,
+        
+        -- User details
+        u.id as user_id, 
+        u.name as user_name, 
+        u.email as user_email, 
+        u.phone as user_phone, 
+        
+        -- Location details
+        l.id as location_id, 
+        l.name as location_name, 
+        l.city, 
+        l.area, 
+        l.latitude, 
+        l.longitude,
+
+        -- Adv details
+        a.id as adv_id,
+        a.title as adv_title,
+        a.description as adv_description,
+
+        -- Images
+        ARRAY_AGG(si.image_url) AS images
+
+    FROM supplies s
+    LEFT JOIN users u ON s.user_id = u.id
+    LEFT JOIN locations l ON s.location_id = l.id
+    LEFT JOIN advertisements a ON s.adv_id = a.id
+    LEFT JOIN supply_images si ON s.id = si.supply_id
+    GROUP BY s.id, u.id, l.id, a.id
+    LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  return result.rows;
+},
 
   // Create a comment for a supply
   createComment: async ({ supplyId, name, comment }) => {

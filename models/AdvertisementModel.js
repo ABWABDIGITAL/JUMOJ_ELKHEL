@@ -7,14 +7,14 @@ const AdvertisementModel = {
     price,
     departmentId,
     type,
-    videoUrl,
-    image,
+    videoUrl = null,  // Set default to null
+    image = null,     // Set default to null
     createdAt,
     endedAt,
     marketName,
-    locationId, 
-    father,
-    mother, // Include the new field
+    locationId,
+    father = null,    // Set optional fields default to null
+    mother = null,    // Set optional fields default to null
     classification,
     age,
     height,
@@ -27,21 +27,17 @@ const AdvertisementModel = {
     );
 
     // Fetch the full advertisement details with populated department and location info
-    const adWithDetails = await pool.query(`SELECT a.*, 
-             d.name AS department_name, 
-             l.name AS location_name, 
-             l.city AS location_city, 
-             l.latitude, 
-             l.longitude 
-      FROM advertisements a
-      JOIN departments d ON a.department_id = d.id
-      JOIN locations l ON a.location_id = l.id
-      WHERE a.id = $1
-    `, [result.rows[0].id]);
+    const adWithDetails = await pool.query(
+      `SELECT a.*, d.name AS department_name, l.name AS location_name, l.city AS location_city, l.latitude, l.longitude
+       FROM advertisements a
+       JOIN departments d ON a.department_id = d.id
+       JOIN locations l ON a.location_id = l.id
+       WHERE a.id = $1`,
+      [result.rows[0].id]
+    );
 
     return adWithDetails.rows[0];
   },
-
   // Get advertisement by ID
   getAdvertisementById: async (id) => {
     const result = await pool.query(

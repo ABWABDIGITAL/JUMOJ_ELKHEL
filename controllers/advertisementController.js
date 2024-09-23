@@ -6,27 +6,55 @@ const AdvertisementController = {
   createAdvertisement: async (req, res) => {
     try {
       const {
-        title, description, price, departmentId, type, createdAt, endedAt,
-        marketName, locationId, father, mother, classification, age, height, priceType
+        title,
+        description,
+        price,
+        departmentId,
+        type,
+        createdAt,
+        endedAt,
+        marketName,
+        locationId, 
+        father,
+        mother, // Include this field
+        classification,
+        age,
+        height,
+        priceType,
       } = req.body;
 
-      // Handle uploaded files (image and video)
-      const image = req.files && req.files['image']
+      // Handle image and video URLs
+      const image = req.files?.['image'] 
         ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`
         : null;
 
-      const videoUrl = req.files && req.files["video"]
-        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
-        : req.body.video; // Use video URL if provided via body
+      const videoUrl = req.files?.['video']
+        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files['video'][0].filename}`
+        : req.body.video;
 
-      // Ensure price is in the correct format
+      // Ensure price is a number
       const formattedPrice = parseFloat(price);
 
-      // Call the model to save advertisement to DB
-      const newAd = await AdvertisementModel.createAdvertisement(
-        title, description, formattedPrice, departmentId, type, videoUrl, image,
-        createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType
-      );
+      // Call the model to save the advertisement to the database
+      const newAd = await AdvertisementModel.createAdvertisement({
+        title,
+        description,
+        price: formattedPrice,
+        departmentId,
+        type,
+        videoUrl,
+        image,
+        createdAt,
+        endedAt,
+        marketName,
+        locationId, 
+        father,
+        mother,
+        classification,
+        age,
+        height,
+        priceType,
+      });
 
       return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
     } catch (error) {

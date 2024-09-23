@@ -22,7 +22,7 @@ const AdvertisementModel = {
   }) => {
     const result = await pool.query(
       `INSERT INTO advertisements (title, description, price, department_id, type, video, image, created_at, ended_at, market_name, location_id, father, mother, classification, age, height, price_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,$17) RETURNING *`,
       [title, description, price, departmentId, type, videoUrl, image, createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType]
     );
     

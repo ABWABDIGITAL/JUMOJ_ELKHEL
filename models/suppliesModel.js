@@ -41,13 +41,13 @@ const SuppliesModel = {
       return supply;
     } catch (error) {
       await client.query("ROLLBACK");
-      // console.error('Error creating supply:', error); // Log the error
       throw error;
     } finally {
       client.release();
     }
   },
 
+  // Get supply by ID including user and location details
   getSupplyById: async (supplyId) => {
     const result = await pool.query(
       `SELECT 
@@ -70,40 +70,36 @@ const SuppliesModel = {
           l.name as location_name, 
           l.city, 
           l.area, 
-         l.latitude, 
+          l.latitude, 
           l.longitude,
   
-          -- Adv details (replace "advertisements" with the actual table name if different)
+          -- Adv details
           a.id as adv_id,
           a.title as adv_title,
           a.description as adv_description,
   
           -- Images
-          ARRAY_AGG(si.image_url) AS images,
-  
-          -- Reviews
-          COALESCE(json_agg(json_build_object('rating', r.rating, 'comment', r.comment)) FILTER (WHERE r.id IS NOT NULL), '[]') AS reviews
+          ARRAY_AGG(si.image_url) AS images
   
       FROM supplies s
-      LEFT JOIN users u ON s.user_id::VARCHAR = u.id::VARCHAR -- Cast to VARCHAR if needed
-      LEFT JOIN locations l ON s.location_id::VARCHAR = l.id::VARCHAR -- Cast to VARCHAR if needed
-      LEFT JOIN advertisements a ON s.adv_id::VARCHAR = a.id::VARCHAR -- Cast to VARCHAR if needed
+      LEFT JOIN users u ON s.user_id::VARCHAR = u.id::VARCHAR
+      LEFT JOIN locations l ON s.location_id::VARCHAR = l.id::VARCHAR
+      LEFT JOIN advertisements a ON s.adv_id::VARCHAR = a.id::VARCHAR
       LEFT JOIN supply_images si ON s.id = si.supply_id
-      LEFT JOIN reviews r ON s.id = r.supply_id
       WHERE s.id = $1
-      GROUP BY s.id, u.id, l.id, a.id`, // Ensure proper grouping for joined tables
+      GROUP BY s.id, u.id, l.id, a.id`,
       [supplyId]
     );
 
     return result.rows[0];
   },
 
-  // Create a review
-  createReview: async ({ supplyId, userId, rating, comment }) => {
+  // Create a comment for a supply
+  createComment: async ({ supplyId, name, comment }) => {
     const result = await pool.query(
-      `INSERT INTO reviews (supply_id, user_id, rating, comment)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [supplyId, userId, rating, comment]
+      `INSERT INTO comments (supply_id, name, comment) 
+       VALUES ($1, $2, $3) RETURNING *`,
+      [supplyId, name, comment]
     );
 
     return result.rows[0];

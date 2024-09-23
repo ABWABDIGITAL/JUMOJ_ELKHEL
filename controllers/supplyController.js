@@ -3,26 +3,25 @@ const jwt = require("jsonwebtoken");
 const Joi = require('joi');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
 
-// Define a schema for validation using Joi
+// Define schemas
 const supplySchema = Joi.object({
   name: Joi.string().min(3).max(255).required(),
   description: Joi.string().allow(null, '').optional(),
   locationId: Joi.number().integer().required(),
   advId: Joi.number().integer().required(),
-  comment: Joi.string().allow(null, '').optional(),
-  images: Joi.array().items(Joi.string().uri()).optional()
+  images: Joi.array().items(Joi.string().uri()).optional(),
 });
 
-const reviewSchema = Joi.object({
+const commentSchema = Joi.object({
   supplyId: Joi.number().integer().required(),
-  rating: Joi.number().min(1).max(5).required(),
+  name: Joi.string().min(3).max(255).required(),
   comment: Joi.string().allow(null, '').optional(),
 });
 
 const SupplyController = {
   // Create a new supply with multiple images
   createSupply: async (req, res) => {
-    const { name, description, locationId, comment, advId } = req.body;
+    const { name, description, locationId, advId } = req.body;
     const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
     const accessToken = req.headers.authorization?.split(" ")[1];
@@ -35,7 +34,7 @@ const SupplyController = {
       const userId = decoded.userId;
 
       // Validate the input with Joi schema
-      const { error } = supplySchema.validate({ name, description, locationId, comment, advId, images });
+      const { error } = supplySchema.validate({ name, description, locationId, advId, images });
       if (error) {
         return res.status(400).json(formatErrorResponse(error.details[0].message));
       }
@@ -44,7 +43,6 @@ const SupplyController = {
       const supply = await SuppliesModel.createSupply({
         name,
         description,
-        comment,   
         advId,    
         userId,
         locationId,
@@ -57,7 +55,31 @@ const SupplyController = {
     }
   },
 
-  // Get supply by ID including user contact info, location, and reviews
+  // Create a comment for a supply
+  createComment: async (req, res) => {
+    const { supplyId, name, comment } = req.body;
+
+    // Validate comment input
+    const { error } = commentSchema.validate({ supplyId, name, comment });
+    if (error) {
+      return res.status(400).json(formatErrorResponse(error.details[0].message));
+    }
+
+    try {
+      // Create the comment
+      const newComment = await SuppliesModel.createComment({
+        supplyId,
+        name,
+        comment
+      });
+
+      return res.status(201).json(formatSuccessResponse('Comment created successfully', newComment));
+    } catch (error) {
+      return res.status(500).json(formatErrorResponse(error.message));
+    }
+  },
+
+  // Get supply by ID including user contact info, location, and comments
   getSupplyById: async (req, res) => {
     const { supplyId } = req.params;
 
@@ -68,39 +90,6 @@ const SupplyController = {
       } else {
         return res.status(404).json(formatErrorResponse('Supply not found'));
       }
-    } catch (error) {
-      return res.status(500).json(formatErrorResponse(error.message));
-    }
-  },
-
-  // Create a review for a supply
-  createReview: async (req, res) => {
-    const { supplyId, rating, comment } = req.body;
-    const accessToken = req.headers.authorization?.split(" ")[1];
-
-    if (!accessToken) {
-      return res.status(401).json(formatErrorResponse('Access token is required'));
-    }
-
-    try {
-      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-      const userId = decoded.userId;
-
-      // Validate review input
-      const { error } = reviewSchema.validate({ supplyId, rating, comment });
-      if (error) {
-        return res.status(400).json(formatErrorResponse(error.details[0].message));
-      }
-
-      // Create the review
-      const review = await SuppliesModel.createReview({
-        supplyId,
-        userId,
-        rating,
-        comment
-      });
-
-      return res.status(201).json(formatSuccessResponse('Review created successfully', review));
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));
     }

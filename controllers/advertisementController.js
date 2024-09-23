@@ -1,79 +1,37 @@
 const AdvertisementModel = require("../models/AdvertisementModel");
-const {
-  formatSuccessResponse,
-  formatErrorResponse,
-} = require("../utils/responseFormatter");
+const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 
 const AdvertisementController = {
   // Create a new advertisement
   createAdvertisement: async (req, res) => {
     try {
       const {
-        title,
-        description,
-        price,
-        departmentId,
-        type,
-        createdAt,
-        endedAt,
-        marketName,
-        locationId, 
-        father,
-        classification,
-        age,
-        height,
-        priceType,
+        title, description, price, departmentId, type, createdAt, endedAt,
+        marketName, locationId, father, mother, classification, age, height, priceType
       } = req.body;
 
-    // Check if files were uploaded
-    const image = req.files && req.files['image']
-    ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`:
-    null;
+      // Handle uploaded files (image and video)
+      const image = req.files && req.files['image']
+        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`
+        : null;
 
-      const videoUrl =
-        req.files && req.files["video"]
-          ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
-          : req.body.video; // Handle video link if provided via body
+      const videoUrl = req.files && req.files["video"]
+        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
+        : req.body.video; // Use video URL if provided via body
 
       // Ensure price is in the correct format
       const formattedPrice = parseFloat(price);
 
       // Call the model to save advertisement to DB
       const newAd = await AdvertisementModel.createAdvertisement(
-        title,
-        description,
-        formattedPrice,
-        departmentId,
-        type,
-        videoUrl,
-        image,
-        createdAt,
-        endedAt,
-        marketName,
-        locationId, 
-        father,
-        classification,
-        age,
-        height,
-        priceType
+        title, description, formattedPrice, departmentId, type, videoUrl, image,
+        createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType
       );
 
-      // Return success response
-      return res
-        .status(201)
-        .json(
-          formatSuccessResponse(newAd, "Advertisement created successfully")
-        );
+      return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
     } catch (error) {
-      // Log the full error for debugging
       console.error("Error creating advertisement:", error);
-
-      // Return a more detailed error response
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error creating advertisement", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error creating advertisement", error.message));
     }
   },
 
@@ -84,17 +42,11 @@ const AdvertisementController = {
     try {
       const ad = await AdvertisementModel.getAdvertisementById(id);
       if (!ad) {
-        return res
-          .status(404)
-          .json(formatErrorResponse("Advertisement not found"));
+        return res.status(404).json(formatErrorResponse("Advertisement not found"));
       }
       return res.status(200).json(formatSuccessResponse(ad));
     } catch (error) {
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error retrieving advertisement", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error retrieving advertisement", error.message));
     }
   },
 
@@ -104,26 +56,13 @@ const AdvertisementController = {
     const fieldsToUpdate = req.body;
 
     try {
-      const updatedAd = await AdvertisementModel.updateAdvertisement(
-        id,
-        fieldsToUpdate
-      );
+      const updatedAd = await AdvertisementModel.updateAdvertisement(id, fieldsToUpdate);
       if (!updatedAd) {
-        return res
-          .status(404)
-          .json(formatErrorResponse("Advertisement not found"));
+        return res.status(404).json(formatErrorResponse("Advertisement not found"));
       }
-      return res
-        .status(200)
-        .json(
-          formatSuccessResponse(updatedAd, "Advertisement updated successfully")
-        );
+      return res.status(200).json(formatSuccessResponse(updatedAd, "Advertisement updated successfully"));
     } catch (error) {
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error updating advertisement", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error updating advertisement", error.message));
     }
   },
 
@@ -134,21 +73,11 @@ const AdvertisementController = {
     try {
       const deletedAd = await AdvertisementModel.deleteAdvertisement(id);
       if (!deletedAd) {
-        return res
-          .status(404)
-          .json(formatErrorResponse("Advertisement not found"));
+        return res.status(404).json(formatErrorResponse("Advertisement not found"));
       }
-      return res
-        .status(200)
-        .json(
-          formatSuccessResponse(null, "Advertisement deleted successfully")
-        );
+      return res.status(200).json(formatSuccessResponse(null, "Advertisement deleted successfully"));
     } catch (error) {
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error deleting advertisement", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error deleting advertisement", error.message));
     }
   },
 
@@ -158,11 +87,7 @@ const AdvertisementController = {
       const ads = await AdvertisementModel.getAllAdvertisements();
       return res.status(200).json(formatSuccessResponse(ads));
     } catch (error) {
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error retrieving advertisements", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error retrieving advertisements", error.message));
     }
   },
 
@@ -171,23 +96,13 @@ const AdvertisementController = {
     const { departmentId } = req.params;
 
     try {
-      const ads = await AdvertisementModel.getAdvertisementsByDepartmentId(
-        departmentId
-      );
+      const ads = await AdvertisementModel.getAdvertisementsByDepartmentId(departmentId);
       if (ads.length === 0) {
-        return res
-          .status(404)
-          .json(
-            formatErrorResponse("No advertisements found for this department")
-          );
+        return res.status(404).json(formatErrorResponse("No advertisements found for this department"));
       }
       return res.status(200).json(formatSuccessResponse(ads));
     } catch (error) {
-      return res
-        .status(500)
-        .json(
-          formatErrorResponse("Error retrieving advertisements", error.message)
-        );
+      return res.status(500).json(formatErrorResponse("Error retrieving advertisements", error.message));
     }
   },
 };

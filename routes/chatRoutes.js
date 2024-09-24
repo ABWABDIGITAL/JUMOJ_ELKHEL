@@ -4,6 +4,17 @@ const {
   formatSuccessResponse,
   formatErrorResponse,
 } = require("../utils/responseFormatter");
+const connectedUsers = {}; // To store user_id to socket_id mapping
+
+// Socket.IO connection
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId; // Example of how to get userId during handshake
+  connectedUsers[userId] = socket.id;
+
+  socket.on("disconnect", () => {
+    delete connectedUsers[userId];
+  });
+});
 
 const createChatRoutes = (pool, io) => {
   // Post a chat message

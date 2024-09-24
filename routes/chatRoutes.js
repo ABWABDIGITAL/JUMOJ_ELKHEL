@@ -114,46 +114,52 @@ const createChatRoutes = (pool, io) => {
     }
   });
 
-  // Join a chat room
-  router.post("/rooms/:room_id/join", (req, res) => {
-    const { room_id } = req.params;
-    const { user_id } = req.body;
+ // Join a chat room
+router.post("/rooms/:room_id/join", (req, res) => {
+  const { room_id } = req.params;
+  const { user_id } = req.body;
 
-    if (!user_id) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "User ID is required to join the room",
-        });
+  if (!user_id) {
+    return res
+      .status(400)
+      .json({ success: false, message: "User ID is required to join the room" });
+  }
+
+  const socketId = connectedUsers[user_id]; // Make sure connectedUsers is populated when user connects to socket
+
+  if (!socketId) {
+    return res
+      .status(400)
+      .json({ success: false, message: `User ${user_id} is not connected to socket` });
+  }
+
+  try {
+    const socket = io.sockets.sockets.get(socketId);
+
+    if (!socket) {
+      // If socket is not found, provide an error message
+      return res.status(400).json({
+        success: false,
+        message: `Socket not found for user ${user_id}`,
+      });
     }
 
-    const socketId = connectedUsers[user_id];
+    // Join the room
+    socket.join(room_id);
+    res.status(200).json({
+      success: true,
+      message: `User ${user_id} joined room ${room_id}`,
+    });
+  } catch (error) {
+    console.error("Error in POST /rooms/:room_id/join:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to join room",
+      error: error.message,
+    });
+  }
+});
 
-    if (!socketId) {
-      return res
-        .status(400)
-        .json({ success: false, message: `User ${user_id} is not connected` });
-    }
-
-    try {
-      io.sockets.sockets.get(socketId).join(room_id);
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: `User ${user_id} joined room ${room_id}`,
-        });
-    } catch (error) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to join room",
-          error: error.message,
-        });
-    }
-  });
 
   // Leave a chat room
   router.post("/rooms/:room_id/leave", (req, res) => {

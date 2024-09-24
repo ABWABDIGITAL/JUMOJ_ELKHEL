@@ -115,29 +115,48 @@ const createChatRoutes = (pool, io) => {
   });
 
  // Join a chat room
-router.post("/rooms/:room_id/join", (req, res) => {
+router.post("/rooms/:room_id/join", async (req, res) => {
   const { room_id } = req.params;
   const { user_id } = req.body;
 
+  // Check if user_id is provided
   if (!user_id) {
-    return res
-      .status(400)
-      .json({ success: false, message: "User ID is required to join the room" });
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required to join the room",
+    });
   }
 
   const socketId = connectedUsers[user_id]; // Make sure connectedUsers is populated when user connects to socket
 
+  // Check if the user is connected
   if (!socketId) {
-    return res
-      .status(400)
-      .json({ success: false, message: `User ${user_id} is not connected to socket` });
+    return res.status(400).json({
+      success: false,
+      message: `User ${user_id} is not connected to a socket`,
+    });
   }
 
   try {
+    // Check if the room exists
+    const roomCheckResult = await pool.query(
+      "SELECT id FROM chat_rooms WHERE id = $1",
+      [room_id]
+    );
+
+    // If the room doesn't exist, return an error
+    if (roomCheckResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Room ${room_id} does not exist`,
+      });
+    }
+
+    // Retrieve the socket
     const socket = io.sockets.sockets.get(socketId);
 
+    // Check if the socket exists
     if (!socket) {
-      // If socket is not found, provide an error message
       return res.status(400).json({
         success: false,
         message: `Socket not found for user ${user_id}`,
@@ -146,13 +165,20 @@ router.post("/rooms/:room_id/join", (req, res) => {
 
     // Join the room
     socket.join(room_id);
-    res.status(200).json({
+    
+    // Optionally, emit an event that the user has joined
+    io.to(room_id).emit("userJoined", {
+      userId: user_id,
+      message: `User ${user_id} has joined the room`,
+    });
+
+    return res.status(200).json({
       success: true,
       message: `User ${user_id} joined room ${room_id}`,
     });
   } catch (error) {
     console.error("Error in POST /rooms/:room_id/join:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to join room",
       error: error.message,

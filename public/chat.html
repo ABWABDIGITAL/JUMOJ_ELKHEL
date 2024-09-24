@@ -2,13 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Socket.IO Chat</title>
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <h1>Socket.IO Chat</h1>
+  <div id="messages"></div> <!-- A div to display messages -->
+  <input id="messageInput" type="text" placeholder="Type a message...">
+  <button id="sendButton">Send</button>
+
   <script>
-    const socket = io('http://localhost:3030'); // Ensure this matches the server port
+    const socket = io('http://localhost:9098'); // Ensure this matches the server port
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
@@ -16,6 +21,9 @@
 
     socket.on('chatMessage', (data) => {
       console.log('Chat message received:', data);
+      // Display message on the webpage
+      const messageDiv = document.getElementById('messages');
+      messageDiv.innerHTML += `<p>${data.userId}: ${data.message}</p>`;
     });
 
     socket.on('connect_error', (error) => {
@@ -26,8 +34,22 @@
       console.error('Socket Error:', error);
     });
 
-    // Example of sending a chat message
-    socket.emit('chatMessage', { message: 'Hello, world!', userId: 1 });
+    // Sending a chat message when the button is clicked
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value;
+      if (message) {
+        socket.emit('chatMessage', { message, userId: 1 }); // Adjust userId as needed
+        messageInput.value = ''; // Clear the input field
+      }
+    });
+
+    // Optional: Send a message when Enter key is pressed
+    document.getElementById('messageInput').addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        document.getElementById('sendButton').click();
+      }
+    });
   </script>
 </body>
 </html>

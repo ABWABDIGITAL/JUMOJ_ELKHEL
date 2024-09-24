@@ -12,13 +12,17 @@ io.on('connection', (socket) => {
 
     try {
       const timestamp = new Date();
-
-      // Get the last message in the room to populate last_message_id and last_message_date
+      
+      // Fetch the last message in the room (if any)
       const lastMessageResult = await pool.query(
         'SELECT id, created_at FROM messages WHERE room_id = $1 ORDER BY created_at DESC LIMIT 1',
         [messageData.roomId]
       );
-      const lastMessage = lastMessageResult.rows[0];
+      
+      let lastMessage = null;
+      if (lastMessageResult.rows.length > 0) {
+        lastMessage = lastMessageResult.rows[0];
+      }
 
       // Insert the new message into the messages table
       const result = await pool.query(
@@ -30,8 +34,8 @@ io.on('connection', (socket) => {
           messageData.receiverId,    // Receiver ID
           messageData.text,          // Message text
           timestamp,                 // Current timestamp
-          lastMessage ? lastMessage.id : null, // Last message ID
-          lastMessage ? lastMessage.created_at : null // Last message date
+          lastMessage ? lastMessage.id : null, // Last message ID (if applicable)
+          lastMessage ? lastMessage.created_at : null // Last message date (if applicable)
         ]
       );
 

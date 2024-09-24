@@ -1,6 +1,6 @@
 const express = require("express");
 const Sentry = require("@sentry/node");
-const cors = require("cors"); // Import CORS middleware
+const cors = require("cors");
 const { sequelize } = require("./models/pannerModel");
 const i18next = require("i18next");
 const i18nextMiddleware = require("i18next-http-middleware");
@@ -38,25 +38,30 @@ i18next
 app.use(i18nextMiddleware.handle(i18next));
 
 // Enable CORS for all routes
-app.use(cors()); // This will allow all origins. You can configure it further if needed.
+app.use(cors());
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Set up Socket.IO connection
-io.on("connection", (socket) => {
-  console.log("A user connected");
+// Function to set up Socket.IO
+const setupSocketIo = (io) => {
+  io.on("connection", (socket) => {
+    console.log("A user connected");
 
-  socket.on("chatMessage", (data) => {
-    const { message, userId } = data;
-    console.log(`User ${userId} sent message: ${message}`);
-    io.emit("chatMessage", { message, userId });
-  });
+    socket.on("chatMessage", (data) => {
+      const { message, userId } = data;
+      console.log(`User ${userId} sent message: ${message}`);
+      io.emit("chatMessage", { message, userId });
+    });
 
-  socket.on("disconnect", () => {
-    console.log("A user disconnected");
+    socket.on("disconnect", () => {
+      console.log("A user disconnected");
+    });
   });
-});
+};
+
+// Call the setup function
+setupSocketIo(io);
 
 // Your routes and other middleware
 app.use("/api", require("./routes/userRoutes"));
@@ -69,21 +74,21 @@ app.use("/trainings", require("./routes/trainingRoutes"));
 app.use("/stores", require("./routes/storeRoutes"));
 app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("/api/notifications", notificationRoutes);
-
 app.use("/chat", createChatRoutes(pool, io));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/debug-sentry", function mainHandler(req, res) {
+// Debug route for Sentry
+app.get("/debug-sentry", (req, res) => {
   throw new Error("My first Sentry error!");
 });
 
-// Custom error handler for any other errors
+// Custom error handler
 app.use((err, req, res, next) => {
   Sentry.captureException(err);
   res.status(500).json({
     success: false,
-    message: req.t("error_message"),
+    message: req.t("error_message") || "An unexpected error occurred",
   });
 });
 

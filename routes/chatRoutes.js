@@ -4,19 +4,21 @@ const {
   formatSuccessResponse,
   formatErrorResponse,
 } = require("../utils/responseFormatter");
-const connectedUsers = {}; // To store user_id to socket_id mapping
 
-// Socket.IO connection
-io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId; // Example of how to get userId during handshake
-  connectedUsers[userId] = socket.id;
-
-  socket.on("disconnect", () => {
-    delete connectedUsers[userId];
-  });
-});
+// Object to track connected users
+const connectedUsers = {}; 
 
 const createChatRoutes = (pool, io) => {
+  // Socket.IO connection logic
+  io.on("connection", (socket) => {
+    const userId = socket.handshake.query.userId; // Example of how to get userId during handshake
+    connectedUsers[userId] = socket.id;
+
+    socket.on("disconnect", () => {
+      delete connectedUsers[userId];
+    });
+  });
+
   // Post a chat message
   router.post("/", async (req, res) => {
     const { sender_id, receiver_id, text, room_id } = req.body;
@@ -125,78 +127,69 @@ const createChatRoutes = (pool, io) => {
     }
   });
 
- // Join a chat room
-router.post("/rooms/:room_id/join", async (req, res) => {
-  const { room_id } = req.params;
-  const { user_id } = req.body;
+  // Join a chat room
+  router.post("/rooms/:room_id/join", async (req, res) => {
+    const { room_id } = req.params;
+    const { user_id } = req.body;
 
-  // Check if user_id is provided
-  if (!user_id) {
-    return res.status(400).json({
-      success: false,
-      message: "User ID is required to join the room",
-    });
-  }
-
-  const socketId = connectedUsers[user_id]; // Make sure connectedUsers is populated when user connects to socket
-
-  // Check if the user is connected
-  if (!socketId) {
-    return res.status(400).json({
-      success: false,
-      message: `User ${user_id} is not connected to a socket`,
-    });
-  }
-
-  try {
-    // Check if the room exists
-    const roomCheckResult = await pool.query(
-      "SELECT id FROM chat_rooms WHERE id = $1",
-      [room_id]
-    );
-
-    // If the room doesn't exist, return an error
-    if (roomCheckResult.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Room ${room_id} does not exist`,
-      });
-    }
-
-    // Retrieve the socket
-    const socket = io.sockets.sockets.get(socketId);
-
-    // Check if the socket exists
-    if (!socket) {
+    if (!user_id) {
       return res.status(400).json({
         success: false,
-        message: `Socket not found for user ${user_id}`,
+        message: "User ID is required to join the room",
       });
     }
 
-    // Join the room
-    socket.join(room_id);
-    
-    // Optionally, emit an event that the user has joined
-    io.to(room_id).emit("userJoined", {
-      userId: user_id,
-      message: `User ${user_id} has joined the room`,
-    });
+    const socketId = connectedUsers[user_id];
 
-    return res.status(200).json({
-      success: true,
-      message: `User ${user_id} joined room ${room_id}`,
-    });
-  } catch (error) {
-    console.error("Error in POST /rooms/:room_id/join:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to join room",
-      error: error.message,
-    });
-  }
-});
+    if (!socketId) {
+      return res.status(400).json({
+        success: false,
+        message: `User ${user_id} is not connected to a socket`,
+      });
+    }
 
+    try {
+      const roomCheckResult = await pool.query(
+        "SELECT id FROM chat_rooms WHERE id = $1",
+        [room_id]
+      );
+
+      if (roomCheckResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: `Room ${room_id} does not exist`,
+        });
+      }
+
+      const socket = io.sockets.sockets.get(socketId);
+
+      if (!socket) {
+        return res.status(400).json({
+          success: false,
+          message: `Socket not found for user ${user_id}`,
+        });
+      }
+
+      socket.join(room_id);
+
+      io.to(room_id).emit("userJoined", {
+        userId: user_id,
+        message: `User ${user_id} has joined the room`,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `User ${user_id} joined room ${room_id}`,
+      });
+    } catch (error) {
+      console.error("Error in POST /rooms/:room_id/join:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to join room",
+        error: error.message,
+      });
+    }
+  });
 
   // Leave a chat room
   router.post("/rooms/:room_id/leave", (req, res) => {
@@ -211,7 +204,11 @@ router.post("/rooms/:room_id/join", async (req, res) => {
     }
 
     try {
-      io.sockets.sockets[user_id].leave(room_id);
+      const socketId = connectedUsers[user_id];
+      if (socketId) {
+        io.sockets.sockets.get(socketId).leave(room_id);
+      }
+
       res.status(200).json({
         success: true,
         message: `User ${user_id} left room ${room_id}`,
@@ -224,6 +221,7 @@ router.post("/rooms/:room_id/join", async (req, res) => {
       });
     }
   });
+
   // Mark a message as read
   router.post("/messages/:message_id/read", async (req, res) => {
     const { message_id } = req.params;
@@ -244,7 +242,6 @@ router.post("/rooms/:room_id/join", async (req, res) => {
         .json(formatSuccessResponse(updatedMessage, "Message marked as read"));
     } catch (error) {
       console.error("Error in POST /messages/:message_id/read:", error);
-      logErrorToFile(error); // Log error to file
       res
         .status(500)
         .json(
@@ -252,9 +249,11 @@ router.post("/rooms/:room_id/join", async (req, res) => {
         );
     }
   });
+
+  // Retrieve unread messages for a user
   router.get("/messages/unread/:user_id", async (req, res) => {
     const { user_id } = req.params;
-  
+
     try {
       const result = await pool.query(
         `SELECT m.*, u_sender.name AS sender_name
@@ -264,15 +263,14 @@ router.post("/rooms/:room_id/join", async (req, res) => {
          ORDER BY m.created_at ASC`,
         [user_id]
       );
-  
+
       res.status(200).json(formatSuccessResponse(result.rows, "Unread messages retrieved successfully"));
     } catch (error) {
       console.error("Error in GET /messages/unread:", error);
-      logErrorToFile(error); // Log error for debugging purposes
       res.status(500).json(formatErrorResponse("An error occurred, and it has been reported."));
     }
   });
-  
+
   return router;
 };
 

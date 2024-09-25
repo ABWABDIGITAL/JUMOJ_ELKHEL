@@ -1,6 +1,6 @@
-const pool = require('./config/db'); // PostgreSQL connection pool
+const pool = require('./config/db');
 
-// Function to check if the user can earn points for an action based on the throttle period
+
 const canEarnPoints = async (userId, actionName) => {
   try {
     const throttleQuery = `
@@ -20,7 +20,7 @@ const canEarnPoints = async (userId, actionName) => {
     const actionConfig = await pool.query(`SELECT throttle_seconds FROM actions WHERE name = $1`, [actionName]);
 
     // Calculate if the last time is greater than the throttle period
-    const throttlePeriod = actionConfig.rows[0].throttle_seconds * 1000; // Convert to milliseconds
+    const throttlePeriod = actionConfig.rows[0].throttle_seconds * 1000; 
     return (new Date() - new Date(lastEarnedAt)) > throttlePeriod;
   } catch (error) {
     console.error('Error checking points eligibility:', error.message);

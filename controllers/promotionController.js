@@ -1,24 +1,28 @@
 // controllers/promotionController.js
-const { createPromotion, linkAdvertisementPromotion, getPromotions, getPromotionById } = require('../models/promotionModel');
+const { linkAdvertisementPromotion, getPromotions, getPromotionById } = require('../models/promotionModel');
+const promotionModel = require('../models/promotionModel');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
 
-const createPromotionController = async (req, res) => {
-  const { period, startDate, endDate, paymentDetails, advertisementIds } = req.body;
-
-  try {
-    // Create the promotion
-    const promotion = await createPromotion(period, startDate, endDate, paymentDetails);
-
-    // Link the promotion with advertisements
-    for (const advertisementId of advertisementIds) {
-      await linkAdvertisementPromotion(advertisementId, promotion.id);
+// Controller to create a new promotion
+const createPromotion = async (req, res) => {
+    const { period, startDate, endDate, paymentDetails, advertisementId } = req.body;
+  
+    try {
+      const newPromotion = await promotionModel.createPromotion(period, startDate, endDate, paymentDetails, advertisementId);
+      res.status(201).json({
+        success: true,
+        message: 'Promotion created successfully',
+        data: newPromotion,
+      });
+    } catch (error) {
+      console.error('Error creating promotion:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create promotion',
+        data: error.message,
+      });
     }
-
-    res.status(201).json(formatSuccessResponse(promotion, 'Promotion created successfully'));
-  } catch (error) {
-    res.status(500).json(formatErrorResponse('Failed to create promotion', error.message));
-  }
-};
+  };
 
 const getPromotionsController = async (req, res) => {
   try {
@@ -45,7 +49,7 @@ const getPromotionByIdController = async (req, res) => {
 };
 
 module.exports = {
-  createPromotionController,
+  createPromotion,
   getPromotionsController,
   getPromotionByIdController,
 };

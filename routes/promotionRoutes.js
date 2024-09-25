@@ -1,7 +1,7 @@
 // routes/promotionRoutes.js
 const express = require("express");
 const {
-  createPromotionController,
+  createPromotion,
   getPromotionsController,
   getPromotionByIdController,
 } = require("../controllers/promotionController");
@@ -9,7 +9,7 @@ const {
 const router = express.Router();
 
 // Create a new promotion
-router.post("", createPromotionController);
+router.post("", createPromotion);
 
 // Get all promotions
 router.get("/", getPromotionsController);

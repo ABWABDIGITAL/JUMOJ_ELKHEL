@@ -43,22 +43,30 @@ app.use(cors());
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// To store user_id to socket_id mapping
+const connectedUsers = {};
+
 // Function to set up Socket.IO
 const setupSocketIo = (io) => {
   io.on("connection", (socket) => {
-    console.log("A user connected");
-
-    socket.on("chatMessage", (data) => {
-      const { message, userId } = data;
-      console.log(`User ${userId} sent message: ${message}`);
-      io.emit("chatMessage", { message, userId });
-    });
-
+    const userId = socket.handshake.query.userId; // Get user ID from query params
+  
+    // Add user to the connected users map
+    if (userId) {
+      connectedUsers[userId] = socket.id;
+      console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+    } else {
+      console.error("User ID not provided in connection request");
+    }
+  
+    // Handle disconnect event
     socket.on("disconnect", () => {
-      console.log("A user disconnected");
+      console.log(`User ${userId} disconnected`);
+      delete connectedUsers[userId];
     });
   });
-};
+
+}
 
 // Call the setup function
 setupSocketIo(io);

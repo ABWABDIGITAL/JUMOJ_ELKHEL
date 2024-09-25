@@ -6,7 +6,7 @@ const {
 } = require("../utils/responseFormatter");
 
 // Object to track connected users
-const connectedUsers = {}; 
+const connectedUsers = {};
 
 const createChatRoutes = (pool, io) => {
   // Socket.IO connection logic
@@ -128,68 +128,19 @@ const createChatRoutes = (pool, io) => {
   });
 
   // Join a chat room
-  router.post("/rooms/:room_id/join", async (req, res) => {
-    const { room_id } = req.params;
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required to join the room",
-      });
-    }
-
-    const socketId = connectedUsers[user_id];
-
-    if (!socketId) {
-      return res.status(400).json({
-        success: false,
-        message: `User ${user_id} is not connected to a socket`,
-      });
-    }
-
-    try {
-      const roomCheckResult = await pool.query(
-        "SELECT id FROM chat_rooms WHERE id = $1",
-        [room_id]
-      );
-
-      if (roomCheckResult.rowCount === 0) {
-        return res.status(404).json({
-          success: false,
-          message: `Room ${room_id} does not exist`,
-        });
-      }
-
-      const socket = io.sockets.sockets.get(socketId);
-
-      if (!socket) {
-        return res.status(400).json({
-          success: false,
-          message: `Socket not found for user ${user_id}`,
-        });
-      }
-
-      socket.join(room_id);
-
-      io.to(room_id).emit("userJoined", {
-        userId: user_id,
-        message: `User ${user_id} has joined the room`,
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: `User ${user_id} joined room ${room_id}`,
-      });
-    } catch (error) {
-      console.error("Error in POST /rooms/:room_id/join:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to join room",
-        error: error.message,
-      });
+  router.post("/rooms/:roomId/join", (req, res) => {
+    const { userId } = req.body; // Ensure userId is passed in the request body
+    const socketId = connectedUsers[userId];
+  
+    if (socketId) {
+      io.to(socketId).emit('joinRoom', req.params.roomId); // Join the room
+      res.json({ success: true, message: `User ${userId} joined room ${req.params.roomId}` });
+    } else {
+      console.log(`User ${userId} is not connected to a socket`);
+      res.status(400).json({ success: false, message: `User ${userId} is not connected to a socket` });
     }
   });
+  
 
   // Leave a chat room
   router.post("/rooms/:room_id/leave", (req, res) => {
@@ -264,10 +215,21 @@ const createChatRoutes = (pool, io) => {
         [user_id]
       );
 
-      res.status(200).json(formatSuccessResponse(result.rows, "Unread messages retrieved successfully"));
+      res
+        .status(200)
+        .json(
+          formatSuccessResponse(
+            result.rows,
+            "Unread messages retrieved successfully"
+          )
+        );
     } catch (error) {
       console.error("Error in GET /messages/unread:", error);
-      res.status(500).json(formatErrorResponse("An error occurred, and it has been reported."));
+      res
+        .status(500)
+        .json(
+          formatErrorResponse("An error occurred, and it has been reported.")
+        );
     }
   });
 

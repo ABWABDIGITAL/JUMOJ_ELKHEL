@@ -13,18 +13,25 @@
   <button id="sendButton">Send</button>
 
   <script>
-    const socket = io('http://localhost:9098'); // Ensure this matches the server port
+   const socket = io('http://localhost:9098', { query: { userId: 1 } });
 
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-    });
+socket.on('connect', () => {
+    console.log('User connected with ID: 1');
+    // After connecting, you can proceed to join the room
+    socket.emit('joinRoom', 'room1');
+});
 
-    socket.on('chatMessage', (data) => {
-      console.log('Chat message received:', data);
+socket.on('userJoined', (data) => {
+    console.log(data.message);
+});
+
+socket.on('chatMessage', (message) => {
+    console.log('Received message:', message);
+});
       // Display message on the webpage
       const messageDiv = document.getElementById('messages');
       messageDiv.innerHTML += `<p>${data.userId}: ${data.message}</p>`;
-    });
+    
 
     socket.on('connect_error', (error) => {
       console.error('Connection Error:', error);

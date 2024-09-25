@@ -38,7 +38,7 @@ const getPromotions = async () => {
         a.title AS advertisement_title, 
         a.description AS advertisement_description,
         a.price AS advertisement_price,     -- Include price
-        a.image AS advertisement_image,     -- Include image
+        a.image AS advertisement_image    -- Include image
         
       FROM promotions p
       LEFT JOIN advertisements a ON p.advertisement_id = a.id
@@ -63,7 +63,7 @@ const getPromotions = async () => {
         a.title AS advertisement_title, 
         a.description AS advertisement_description,
         a.price AS advertisement_price,     -- Include price
-        a.image AS advertisement_image,     -- Include image
+        a.image AS advertisement_image    -- Include image
         -- Fetch city from locations table
        
       FROM promotions p

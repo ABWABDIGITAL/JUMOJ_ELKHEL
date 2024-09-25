@@ -12,7 +12,7 @@ const ApiError = require('../utils/ApiError');
 // Multer storage configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, path.join(__dirname, '../uploads/panner/'));
+      cb(null, path.join(__dirname, '..uploads/Payments/'));
     },
     filename: function (req, file, cb) {
       cb(null, Date.now() + '-' + file.originalname);

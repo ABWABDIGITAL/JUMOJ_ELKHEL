@@ -10,6 +10,7 @@ const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
 const pool = require("./config/db");
+const faqRoutes = require('./routes/faqRoutes');  
 const createChatRoutes = require("./routes/chatRoutes");
 
 Sentry.init({
@@ -82,6 +83,7 @@ app.use("/trainings", require("./routes/trainingRoutes"));
 app.use("/stores", require("./routes/storeRoutes"));
 app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/faq", faqRoutes);
 app.use("/chat", createChatRoutes(pool, io));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, "public")));

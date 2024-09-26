@@ -5,7 +5,7 @@ const {
   formatSuccessResponse,
   formatErrorResponse,
 } = require("../utils/responseFormatter");
-const { addUserPoints } = require("../routes/addPonitRoutes");
+const { addUserPoints } = require("../models/addUserPointsModel");
 
 const StoreController = {
   // Create a new store with an image and files

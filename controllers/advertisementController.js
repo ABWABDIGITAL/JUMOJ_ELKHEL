@@ -3,7 +3,7 @@ const {
   formatSuccessResponse,
   formatErrorResponse,
 } = require("../utils/responseFormatter");
-const { addUserPoints } = require("../routes/addPonitRoutes");
+const { addUserPoints } = require("../models/addUserPointsModel");
 
 const AdvertisementController = {
   // Create a new advertisement

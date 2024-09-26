@@ -1,16 +1,13 @@
-const SuppliesModel = require("../models/suppliesModel");
+const SuppliesModel = require('../models/suppliesModel');
 const jwt = require("jsonwebtoken");
-const Joi = require("joi");
-const {
-  formatSuccessResponse,
-  formatErrorResponse,
-} = require("../utils/responseFormatter");
-const { addUserPoints } = require("../routes/addPonitRoutes");
+const Joi = require('joi');
+const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
+const { addUserPoints } = require("../models/addUserPointsModel");
 
 // Define schemas
 const supplySchema = Joi.object({
   name: Joi.string().min(3).max(255).required(),
-  description: Joi.string().allow(null, "").optional(),
+  description: Joi.string().allow(null, '').optional(),
   locationId: Joi.number().integer().required(),
   advId: Joi.number().integer().required(),
   images: Joi.array().items(Joi.string().uri()).optional(),
@@ -19,25 +16,18 @@ const supplySchema = Joi.object({
 const commentSchema = Joi.object({
   supplyId: Joi.number().integer().required(),
   name: Joi.string().min(3).max(255).required(),
-  comment: Joi.string().allow(null, "").optional(),
+  comment: Joi.string().allow(null, '').optional(),
 });
 
 const SupplyController = {
   // Create a new supply with multiple images
   createSupply: async (req, res) => {
     const { name, description, locationId, advId } = req.body;
-    const images = req.files
-      ? req.files.map(
-          (file) =>
-            `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`
-        )
-      : [];
+    const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
     const accessToken = req.headers.authorization?.split(" ")[1];
     if (!accessToken) {
-      return res
-        .status(401)
-        .json(formatErrorResponse("Access token is required"));
+      return res.status(401).json(formatErrorResponse('Access token is required'));
     }
 
     try {
@@ -45,32 +35,22 @@ const SupplyController = {
       const userId = decoded.userId;
 
       // Validate the input with Joi schema
-      const { error } = supplySchema.validate({
-        name,
-        description,
-        locationId,
-        advId,
-        images,
-      });
+      const { error } = supplySchema.validate({ name, description, locationId, advId, images });
       if (error) {
-        return res
-          .status(400)
-          .json(formatErrorResponse(error.details[0].message));
+        return res.status(400).json(formatErrorResponse(error.details[0].message));
       }
 
       // Create the supply
       const supply = await SuppliesModel.createSupply({
         name,
         description,
-        advId,
+        advId,    
         userId,
         locationId,
-        images,
+        images
       });
 
-      return res
-        .status(201)
-        .json(formatSuccessResponse("Supply created successfully", supply));
+      return res.status(201).json(formatSuccessResponse('Supply created successfully', supply));
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));
     }
@@ -83,9 +63,7 @@ const SupplyController = {
     // Validate comment input
     const { error } = commentSchema.validate({ supplyId, name, comment });
     if (error) {
-      return res
-        .status(400)
-        .json(formatErrorResponse(error.details[0].message));
+      return res.status(400).json(formatErrorResponse(error.details[0].message));
     }
 
     try {
@@ -93,14 +71,10 @@ const SupplyController = {
       const newComment = await SuppliesModel.createComment({
         supplyId,
         name,
-        comment,
+        comment
       });
-      await addUserPoints(userId, 1, 10);
-      return res
-        .status(201)
-        .json(
-          formatSuccessResponse("Comment created successfully", newComment)
-        );
+await addUserPoints(userId, 1, 10);
+      return res.status(201).json(formatSuccessResponse('Comment created successfully', newComment));
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));
     }
@@ -113,11 +87,9 @@ const SupplyController = {
     try {
       const supply = await SuppliesModel.getSupplyById(supplyId);
       if (supply) {
-        return res
-          .status(200)
-          .json(formatSuccessResponse("Supply retrieved successfully", supply));
+        return res.status(200).json(formatSuccessResponse('Supply retrieved successfully', supply));
       } else {
-        return res.status(404).json(formatErrorResponse("Supply not found"));
+        return res.status(404).json(formatErrorResponse('Supply not found'));
       }
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));
@@ -131,18 +103,14 @@ const SupplyController = {
     try {
       const supplies = await SuppliesModel.getAllSupplies({
         page: parseInt(page),
-        limit: parseInt(limit),
+        limit: parseInt(limit)
       });
 
-      return res
-        .status(200)
-        .json(
-          formatSuccessResponse("Supplies retrieved successfully", supplies)
-        );
+      return res.status(200).json(formatSuccessResponse('Supplies retrieved successfully', supplies));
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));
     }
-  },
+  }
 };
 
 module.exports = SupplyController;

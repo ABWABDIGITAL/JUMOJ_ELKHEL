@@ -122,6 +122,28 @@ router.post('/user/:userId/points', async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to add points' });
     }
 });
+// Fetch total points for a user
+router.get('/user/:userId/total-points', async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        // Query to sum up the points for the user
+        const totalPointsResult = await pool.query(
+            `SELECT SUM(points) AS total_points FROM user_points WHERE user_id = $1`,
+            [userId]
+        );
+
+        const totalPoints = totalPointsResult.rows[0].total_points || 0; // Return 0 if no points
+
+        res.json({
+            success: true,
+            totalPoints
+        });
+    } catch (error) {
+        console.error('Error fetching total points:', error);
+        res.status(500).json({ success: false, message: 'Failed to retrieve total points' });
+    }
+});
 
 // Export only the router
 module.exports = 

@@ -1,11 +1,14 @@
 const AdvertisementModel = require("../models/AdvertisementModel");
 const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
-
 const { addUserPoints } = require("../models/addUserPointsModel");
+
 const AdvertisementController = {
   // Create a new advertisement
   createAdvertisement: async (req, res) => {
     try {
+      // Extract userId from the request object, assuming authenticateToken middleware attaches user info to req.user
+      const userId = req.user.id;  // Ensure this matches how you're setting user info in authenticateToken
+
       const {
         title,
         description,
@@ -17,7 +20,7 @@ const AdvertisementController = {
         marketName,
         locationId, 
         father,
-        mother, // Include this field
+        mother,
         classification,
         age,
         height,
@@ -56,8 +59,9 @@ const AdvertisementController = {
         height,
         priceType,
       });
-// Award points to the user for creating an ad (assuming actionId '1' corresponds to 'create_advertisement')
-await addUserPoints(userId, 1, 10); // Assuming 10 points are awarded for this action
+
+      // Award points to the user for creating an ad based on userId extracted from token
+      await addUserPoints(userId, 1, 10); // Assuming 10 points are awarded for this action
 
       return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
     } catch (error) {

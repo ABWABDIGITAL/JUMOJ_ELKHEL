@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const authenticateToken = require('../middleware/authMiddleware'); 
 const AdvertisementController = require("../controllers/advertisementController");
 
 // Multer storage configuration for image and video files
@@ -43,6 +44,7 @@ router.post(
     { name: "image", maxCount: 1 },
     { name: "video", maxCount: 1 },
   ]),
+  authenticateToken,
   AdvertisementController.createAdvertisement
 );
 router.get("/advertisements/:id", AdvertisementController.getAdvertisementById);

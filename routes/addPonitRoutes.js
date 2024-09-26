@@ -117,6 +117,9 @@ router.post('/user/:userId/points', async (req, res) => {
     }
 
     try {
+        // Log inputs for debugging
+        console.log('Inserting points for user:', { userId, actionId });
+
         // First, retrieve the points for the actionId from the actions table
         const actionData = await pool.query(
             `SELECT points FROM actions WHERE id = $1`,
@@ -128,6 +131,7 @@ router.post('/user/:userId/points', async (req, res) => {
         }
 
         const points = actionData.rows[0].points; // Get the points for the action
+
         // Insert into user_points
         const result = await pool.query(
             `INSERT INTO user_points (user_id, action, points) VALUES ($1, $2, $3) RETURNING *`,
@@ -142,10 +146,11 @@ router.post('/user/:userId/points', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error adding user points:', error);
+        console.error('Error adding user points:', error.message, error);
         res.status(500).json({ success: false, message: 'Failed to add points' });
     }
 });
+
 
 // Export only the router
 module.exports = router;

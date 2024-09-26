@@ -107,6 +107,45 @@ const addUserPoints = async (userId, actionId) => {
         console.error('Error adding user points:', error.message);
     }
 };
+// Add points to the user's account using actionId
+router.post('/user/:userId/points', async (req, res) => {
+    const userId = req.params.userId;
+    const { actionId } = req.body; // Expecting actionId to be sent in the request body
+
+    if (!actionId) {
+        return res.status(400).json({ success: false, message: 'Action ID is required.' });
+    }
+
+    try {
+        // First, retrieve the points for the actionId from the actions table
+        const actionData = await pool.query(
+            `SELECT points FROM actions WHERE id = $1`,
+            [actionId]
+        );
+
+        if (actionData.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Action not found.' });
+        }
+
+        const points = actionData.rows[0].points; // Get the points for the action
+        // Insert into user_points
+        const result = await pool.query(
+            `INSERT INTO user_points (user_id, action, points) VALUES ($1, $2, $3) RETURNING *`,
+            [userId, actionId, points]
+        );
+
+        const newPointEntry = result.rows[0];
+        res.status(201).json({
+            success: true,
+            message: 'Points added successfully',
+            point: newPointEntry
+        });
+
+    } catch (error) {
+        console.error('Error adding user points:', error);
+        res.status(500).json({ success: false, message: 'Failed to add points' });
+    }
+});
 
 // Export only the router
 module.exports = router;

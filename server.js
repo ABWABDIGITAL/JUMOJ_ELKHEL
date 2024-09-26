@@ -90,6 +90,7 @@ app.use('/api/commission-payments', commissionPaymentRoutes);
 app.use('/api/my-payments', myPaymentRoutes);
 app.use("/chat", createChatRoutes(pool, io));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // Debug route for Sentry

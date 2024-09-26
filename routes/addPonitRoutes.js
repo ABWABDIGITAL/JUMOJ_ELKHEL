@@ -108,8 +108,5 @@ const addUserPoints = async (userId, actionId) => {
     }
 };
 
-// Sample usage
-// addUserPoints(1, 1);  // Example of awarding points when a user adds an advertisement
-
-module.exports = { addUserPoints, router };
-;
+// Export only the router
+module.exports = router;

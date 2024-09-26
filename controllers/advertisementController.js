@@ -1,13 +1,16 @@
 const AdvertisementModel = require("../models/AdvertisementModel");
-const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
-const { addUserPoints } = require("../models/addUserPointsModel");
+const {
+  formatSuccessResponse,
+  formatErrorResponse,
+} = require("../utils/responseFormatter");
+const { addUserPoints } = require("../routes/addPonitRoutes");
 
 const AdvertisementController = {
   // Create a new advertisement
   createAdvertisement: async (req, res) => {
     try {
       // Extract userId from the request object, assuming authenticateToken middleware attaches user info to req.user
-      const userId = req.user.id;  // Ensure this matches how you're setting user info in authenticateToken
+      const userId = req.user.id; // Ensure this matches how you're setting user info in authenticateToken
 
       const {
         title,
@@ -18,7 +21,7 @@ const AdvertisementController = {
         createdAt,
         endedAt,
         marketName,
-        locationId, 
+        locationId,
         father,
         mother,
         classification,
@@ -28,12 +31,12 @@ const AdvertisementController = {
       } = req.body;
 
       // Handle image and video URLs
-      const image = req.files?.['image'] 
-        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files['image'][0].filename}`
+      const image = req.files?.["image"]
+        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files["image"][0].filename}`
         : null;
 
-      const videoUrl = req.files?.['video']
-        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files['video'][0].filename}`
+      const videoUrl = req.files?.["video"]
+        ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
         : req.body.video;
 
       // Ensure price is a number
@@ -51,7 +54,7 @@ const AdvertisementController = {
         createdAt,
         endedAt,
         marketName,
-        locationId, 
+        locationId,
         father,
         mother,
         classification,
@@ -63,10 +66,18 @@ const AdvertisementController = {
       // Award points to the user for creating an ad based on userId extracted from token
       await addUserPoints(userId, 1, 10); // Assuming 10 points are awarded for this action
 
-      return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
+      return res
+        .status(201)
+        .json(
+          formatSuccessResponse(newAd, "Advertisement created successfully")
+        );
     } catch (error) {
       console.error("Error creating advertisement:", error);
-      return res.status(500).json(formatErrorResponse("Error creating advertisement", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error creating advertisement", error.message)
+        );
     }
   },
 
@@ -77,11 +88,17 @@ const AdvertisementController = {
     try {
       const ad = await AdvertisementModel.getAdvertisementById(id);
       if (!ad) {
-        return res.status(404).json(formatErrorResponse("Advertisement not found"));
+        return res
+          .status(404)
+          .json(formatErrorResponse("Advertisement not found"));
       }
       return res.status(200).json(formatSuccessResponse(ad));
     } catch (error) {
-      return res.status(500).json(formatErrorResponse("Error retrieving advertisement", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error retrieving advertisement", error.message)
+        );
     }
   },
 
@@ -91,13 +108,26 @@ const AdvertisementController = {
     const fieldsToUpdate = req.body;
 
     try {
-      const updatedAd = await AdvertisementModel.updateAdvertisement(id, fieldsToUpdate);
+      const updatedAd = await AdvertisementModel.updateAdvertisement(
+        id,
+        fieldsToUpdate
+      );
       if (!updatedAd) {
-        return res.status(404).json(formatErrorResponse("Advertisement not found"));
+        return res
+          .status(404)
+          .json(formatErrorResponse("Advertisement not found"));
       }
-      return res.status(200).json(formatSuccessResponse(updatedAd, "Advertisement updated successfully"));
+      return res
+        .status(200)
+        .json(
+          formatSuccessResponse(updatedAd, "Advertisement updated successfully")
+        );
     } catch (error) {
-      return res.status(500).json(formatErrorResponse("Error updating advertisement", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error updating advertisement", error.message)
+        );
     }
   },
 
@@ -108,11 +138,21 @@ const AdvertisementController = {
     try {
       const deletedAd = await AdvertisementModel.deleteAdvertisement(id);
       if (!deletedAd) {
-        return res.status(404).json(formatErrorResponse("Advertisement not found"));
+        return res
+          .status(404)
+          .json(formatErrorResponse("Advertisement not found"));
       }
-      return res.status(200).json(formatSuccessResponse(null, "Advertisement deleted successfully"));
+      return res
+        .status(200)
+        .json(
+          formatSuccessResponse(null, "Advertisement deleted successfully")
+        );
     } catch (error) {
-      return res.status(500).json(formatErrorResponse("Error deleting advertisement", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error deleting advertisement", error.message)
+        );
     }
   },
 
@@ -122,7 +162,11 @@ const AdvertisementController = {
       const ads = await AdvertisementModel.getAllAdvertisements();
       return res.status(200).json(formatSuccessResponse(ads));
     } catch (error) {
-      return res.status(500).json(formatErrorResponse("Error retrieving advertisements", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error retrieving advertisements", error.message)
+        );
     }
   },
 
@@ -131,13 +175,23 @@ const AdvertisementController = {
     const { departmentId } = req.params;
 
     try {
-      const ads = await AdvertisementModel.getAdvertisementsByDepartmentId(departmentId);
+      const ads = await AdvertisementModel.getAdvertisementsByDepartmentId(
+        departmentId
+      );
       if (ads.length === 0) {
-        return res.status(404).json(formatErrorResponse("No advertisements found for this department"));
+        return res
+          .status(404)
+          .json(
+            formatErrorResponse("No advertisements found for this department")
+          );
       }
       return res.status(200).json(formatSuccessResponse(ads));
     } catch (error) {
-      return res.status(500).json(formatErrorResponse("Error retrieving advertisements", error.message));
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("Error retrieving advertisements", error.message)
+        );
     }
   },
 };

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const pool = require('../config/db');
 router.get('/user/:userId/points', async (req, res) => {
     const userId = req.params.userId;
     const { page = 1, limit = 10 } = req.query; // Pagination with defaults

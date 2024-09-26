@@ -2,6 +2,7 @@ const SuppliesModel = require('../models/suppliesModel');
 const jwt = require("jsonwebtoken");
 const Joi = require('joi');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
+const { addUserPoints } = require("../models/addUserPointsModel");
 
 // Define schemas
 const supplySchema = Joi.object({
@@ -72,7 +73,7 @@ const SupplyController = {
         name,
         comment
       });
-
+      await addUserPoints(userId, 1, 10);
       return res.status(201).json(formatSuccessResponse('Comment created successfully', newComment));
     } catch (error) {
       return res.status(500).json(formatErrorResponse(error.message));

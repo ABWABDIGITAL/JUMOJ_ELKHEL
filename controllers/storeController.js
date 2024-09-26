@@ -2,6 +2,7 @@ const StoreModel = require('../models/storeModel');
 const path = require('path');
 const fs = require('fs');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
+const { addUserPoints } = require("../models/addUserPointsModel");
 
 const StoreController = {
   // Create a new store with an image and files
@@ -33,7 +34,7 @@ const StoreController = {
         imageUrl, // Store the image URL
         fileUrls // Store the file URLs
       });
-
+      await addUserPoints(userId, 2, 10);
       res.status(201).json(formatSuccessResponse(store, 'Store created successfully'));
     } catch (error) {
       res.status(500).json(formatErrorResponse(error.message));

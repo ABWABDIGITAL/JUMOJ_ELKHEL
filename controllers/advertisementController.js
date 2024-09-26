@@ -1,6 +1,7 @@
 const AdvertisementModel = require("../models/AdvertisementModel");
 const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 
+const { addUserPoints } = require("../models/addUserPointsModel");
 const AdvertisementController = {
   // Create a new advertisement
   createAdvertisement: async (req, res) => {
@@ -55,6 +56,8 @@ const AdvertisementController = {
         height,
         priceType,
       });
+// Award points to the user for creating an ad (assuming actionId '1' corresponds to 'create_advertisement')
+await addUserPoints(userId, 1, 10); // Assuming 10 points are awarded for this action
 
       return res.status(201).json(formatSuccessResponse(newAd, "Advertisement created successfully"));
     } catch (error) {

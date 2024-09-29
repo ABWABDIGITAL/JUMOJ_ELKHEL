@@ -42,7 +42,7 @@ app.use(i18nextMiddleware.handle(i18next));
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: ['https://91.108.102.81'], // Replace with your allowed origins
+  origin: '*', // Replace with your allowed origins
   methods: ["GET", "POST"], // Specify methods
 }));
 

@@ -4,23 +4,36 @@ const bcrypt = require("bcryptjs");
 // Create a new user with hashed password
 
 const UserModel = {
-  // Create a user with phone, key, pending status, and OTP
-  createUser: async (name, phone, email, key, password,  status) => {
-    // Log the values being passed, especially `password`
-    console.log({ name, phone, email, key, password,  status });
+ // Create a user with phone, key, pending status, and fixed OTP
+createUser: async (name, phone, email, key, password, confirmPassword, status) => {
+  // Log the values being passed
+  console.log({ name, phone, email, key, password, confirmPassword, status });
 
-    if (!password) {
-      throw new Error("Password is undefined or empty");
-    }
+  // Check for empty password and confirmPassword
+  if (!password || !confirmPassword) {
+      throw new Error("Password or confirm password is undefined or empty");
+  }
 
-    const hashedPassword = await bcrypt.hash(password, 10); // bcrypt will hash the password
-    const result = await pool.query(
-      `INSERT INTO users (name, phone, email, key, password,  status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [name, phone, email, key, hashedPassword, status]
-    );
-    return result.rows[0];
-  },
+  // Check if password matches confirmPassword
+  if (password !== confirmPassword) {
+      throw new Error("Passwords do not match");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+
+  // Generate a fixed OTP
+  const otp = '1234';
+  const otpExpiresInSeconds = Math.floor(Date.now() / 1000) + 3600; // OTP valid for 1 hour
+
+  // Insert user into the database
+  const result = await pool.query(
+      `INSERT INTO users (name, phone, email, key, password, otp, otp_expires,confirmPassword, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9) RETURNING *`,
+      [name, phone, email, key, hashedPassword, otp, otpExpiresInSeconds,confirmPassword, status]
+  );
+  return result.rows[0];
+},
+
   // Get a user by phone number
   getUserByPhone: async (phone) => {
     const result = await pool.query(`SELECT * FROM users WHERE phone = $1`, [
@@ -122,38 +135,48 @@ const UserModel = {
   },
 
   // Update user contact information and locationId
-  updateUser: async (
-    userId,
-    { name, email, phone, identity, birthday, locationId, password }
-  ) => {
-    let query = `UPDATE users SET 
-                  name = COALESCE($2, name), 
-                  email = COALESCE($3, email), 
-                  phone = COALESCE($4, phone), 
-                  identity = COALESCE($5, identity),
-                  birthday = COALESCE($6, birthday),
-                  location_id = COALESCE($7, location_id)`;
+updateUser: async (
+  userId,
+  { name, email, phone, identity, birthday, locationId, password }
+) => {
+  // Construct the base query with COALESCE to update only fields that are provided
+  let query = `UPDATE users SET 
+                name = COALESCE($2, name), 
+                email = COALESCE($3, email), 
+                phone = COALESCE($4, phone), 
+                identity = COALESCE($5, identity),
+                birthday = COALESCE($6, birthday),
+                location_id = COALESCE($7, location_id)`;
 
-    const values = [userId, name, email, phone, identity, birthday, locationId];
+  const values = [userId, name, email, phone, identity, birthday, locationId];
 
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      query += `, password = $8`;
-      values.push(hashedPassword);
-    }
+  // Check if password is provided, and if so, hash and include it in the update
+  if (password) {
+    const hashedPassword = await bcrypt.hash(password.trim(), 10); // Hash the password
+    query += `, password = $8`;
+    values.push(hashedPassword);
+  }
 
-    query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id`;
+  // Append the WHERE clause and the RETURNING clause to the query
+  query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id`;
 
+  try {
+    // Execute the query and update the user information
     const result = await pool.query(query, values);
 
-    if (result.rows[0]) {
-      // Fetch the user with populated location after update and include WhatsApp link
-      return await UserModel.getUserByIdWithDetails(userId);
+    // Check if the user was updated and fetch the updated user details including location
+    if (result.rows.length > 0) {
+      const updatedUser = await UserModel.getUserByIdWithDetails(userId);
+      return updatedUser;
     }
 
-    return null;
-  },
- 
+    return null; // Return null if no user was found or updated
+  } catch (error) {
+    console.error("Error updating user:", error.message);
+    throw new Error("An error occurred while updating user information");
+  }
+},
+
   
 };
 

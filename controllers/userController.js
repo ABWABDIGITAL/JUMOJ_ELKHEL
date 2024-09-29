@@ -17,28 +17,35 @@ const UserController = {
   createUser: async (req, res) => {
     const { name, key, email, phone, password, confirmPassword } = req.body;
 
+    // Validate required fields
     if (!name || !key || !email || !phone || !password || !confirmPassword) {
-      return res.status(400).json(formatErrorResponse("All fields are required"));
+        return res.status(400).json(formatErrorResponse("All fields are required"));
     }
 
+    // Log the received parameters for debugging
+    console.log("Request body:", req.body);
+
+    // Check if password matches confirmPassword
     if (password !== confirmPassword) {
-      return res.status(400).json(formatErrorResponse("Passwords do not match"));
+        return res.status(400).json(formatErrorResponse("Passwords do not match"));
     }
 
     try {
-      const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
-      if (existingUser) {
-        return res.status(409).json(formatErrorResponse("Phone number is already in use"));
-      }
+        const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
+        if (existingUser) {
+            return res.status(409).json(formatErrorResponse("Phone number is already in use"));
+        }
 
-      const user = await UserModel.createUser(name, phone, email, key, password, "pending");
+        // Pass 'pending' status and confirmPassword to UserModel.createUser method
+        const user = await UserModel.createUser(name, phone, email, key, password, confirmPassword, "pending");
 
-      res.status(201).json(formatSuccessResponse(null, "User created successfully. Please verify your phone number using the OTP sent."));
+        res.status(201).json(formatSuccessResponse(null, "User created successfully. Please verify your phone number using the OTP sent."));
     } catch (error) {
-      console.error("Error creating user:", error.message);
-      res.status(500).json(formatErrorResponse("An internal error occurred"));
+        console.error("Error creating user:", error.message);
+        res.status(500).json(formatErrorResponse("An internal error occurred"));
     }
-  },
+}
+,
 
   verifyOtp: async (req, res) => {
     const { phone, key, otp } = req.body;

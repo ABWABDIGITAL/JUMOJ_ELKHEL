@@ -11,6 +11,7 @@ const StoreController = {
   // Create a new store with an image and files
   createStore: async (req, res) => {
     const { name, locationId, timeOfWorks } = req.body;
+    const userId = req.user.id;  
     const image = req.files["image"] ? req.files["image"][0] : null; // Single image
     const files = req.files["files"] || []; // Array of files
 

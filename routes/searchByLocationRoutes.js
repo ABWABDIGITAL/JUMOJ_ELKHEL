@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const LocationSearchModel = require('./models/LocationSearchModel'); // Adjust the path accordingly
+const LocationSearchModel = require('../models/LocationSearchModel'); // Adjust the path accordingly
 
 // Search by location
 router.get('/api/search', async (req, res) => {

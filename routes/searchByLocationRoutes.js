@@ -16,7 +16,7 @@ router.get('/api/search', authenticateToken, async (req, res) => {
     }
 
     try {
-        // Call the search function in your model
+        const users = await UserModel.searchByLocation(locationId, page, limit); // Call the search function in your model
         return res.status(200).json({
             success: true,
             message: "Results retrieved successfully",

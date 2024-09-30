@@ -175,9 +175,41 @@ updateUser: async (
     console.error("Error updating user:", error.message);
     throw new Error("An error occurred while updating user information");
   }
-},
+},searchByLocation: async (locationId, page, limit) => {
+  const offset = (page - 1) * limit;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.phone,
+        l.id as location_id,
+        l.name as location_name,
+        l.city,
+        l.area,
+        l.latitude,
+        l.longitude
+      FROM 
+        users u
+      LEFT JOIN 
+        locations l ON u.location_id = l.id
+      WHERE 
+        l.id = $1
+      LIMIT $2 OFFSET $3`, 
+      [locationId, limit, offset]
+    );
+
+    return result.rows; // Return the array of users found
+  } catch (error) {
+    throw new Error(`Database query failed: ${error.message}`); // Handle any database errors
+  }
+}
+};
+
 
   
-};
+
 
 module.exports = UserModel;

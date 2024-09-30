@@ -107,20 +107,30 @@ getSupplyById: async (req, res) => {
 
 
   // Get supplies with pagination support
-  getAllSupplies: async (req, res) => {
-    const { page = 1, limit = 10 } = req.query; // Default to page 1 and 10 items per page
+  // Get supplies with pagination support
+getAllSupplies: async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Default to page 1 and 10 items per page
 
-    try {
-      const supplies = await SuppliesModel.getAllSupplies({
-        page: parseInt(page),
-        limit: parseInt(limit)
-      });
+  // Validate page and limit to be positive integers
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
 
-      return res.status(200).json(formatSuccessResponse('Supplies retrieved successfully', supplies));
-    } catch (error) {
-      return res.status(500).json(formatErrorResponse(error.message));
-    }
+  if (isNaN(pageNumber) || pageNumber < 1 || isNaN(limitNumber) || limitNumber < 1) {
+    return res.status(400).json(formatErrorResponse('Page and limit must be positive integers.'));
   }
+
+  try {
+    const supplies = await SuppliesModel.getAllSupplies({
+      page: pageNumber,
+      limit: limitNumber
+    });
+
+    return res.status(200).json(formatSuccessResponse('Supplies retrieved successfully', supplies));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse('Error fetching supplies: ' + error.message));
+  }
+}
+
 };
 
 module.exports = SupplyController;

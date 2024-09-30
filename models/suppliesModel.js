@@ -118,10 +118,10 @@ const SuppliesModel = {
         a.description as adv_description,
   
         -- Images (handle null values and empty arrays)
-        COALESCE(ARRAY_AGG(DISTINCT si.image_url) FILTER (WHERE si.image_url IS NOT NULL), '{}') AS images,
+        COALESCE(ARRAY_AGG(si.image_url) FILTER (WHERE si.image_url IS NOT NULL), '{}') AS images,
   
-        -- Comments (handle null values and empty arrays)
-        COALESCE(JSON_AGG(DISTINCT c.* ORDER BY c.created_at) FILTER (WHERE c.id IS NOT NULL), '[]') AS comments
+        -- Comments (ordered by created_at, no DISTINCT)
+        COALESCE(JSON_AGG(c ORDER BY c.created_at) FILTER (WHERE c.id IS NOT NULL), '[]') AS comments
   
       FROM supplies s
       LEFT JOIN users u ON s.user_id = u.id
@@ -160,6 +160,7 @@ const SuppliesModel = {
       throw new Error(`Error fetching supplies: ${error.message}`);
     }
   },
+  
   
 
   // Create a comment for a supply

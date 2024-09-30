@@ -47,8 +47,7 @@ const SuppliesModel = {
     }
   },
 
-  // Get supply by ID including user and location details
-  getSupplyById: async (supplyId) => {
+  getSupplyById :async (supplyId) => {
     const query = `
       SELECT 
         s.id,
@@ -69,7 +68,7 @@ const SuppliesModel = {
         l.longitude,
         a.title as adv_title,
         a.description as adv_description,
-        ARRAY_AGG(i.url) AS images, -- Get images as an array
+        ARRAY_AGG(i.image_url) AS images, -- Corrected column name
         COALESCE(JSON_AGG(c.* ORDER BY c.created_at) FILTER (WHERE c.id IS NOT NULL), '[]') AS comments -- Ensure comments are ordered and empty array returned when no comments
       FROM 
         supplies s
@@ -85,7 +84,7 @@ const SuppliesModel = {
     const result = await pool.query(query, [supplyId]);
     return result.rows[0]; // Return the first supply (should only be one)
   },
-
+  
   // Get all supplies with pagination
   getAllSupplies: async ({ page = 1, limit = 10 }) => {
     const offset = (page - 1) * limit;

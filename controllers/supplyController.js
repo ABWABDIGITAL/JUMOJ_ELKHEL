@@ -56,45 +56,55 @@ const SupplyController = {
     }
   },
 
-  // Create a comment for a supply
-  createComment: async (req, res) => {
-    const { supplyId, name, comment } = req.body;
-    const userId = req.user.id;
-    // Validate comment input
-    const { error } = commentSchema.validate({ supplyId, name, comment });
-    if (error) {
-      return res.status(400).json(formatErrorResponse(error.details[0].message));
+// Create a comment for a supply
+createComment: async (req, res) => {
+  const { supplyId, name, comment } = req.body;
+  const userId = req.user.id; // Assuming you have user authentication
+
+  // Validate comment input
+  const { error } = commentSchema.validate({ supplyId, name, comment });
+  if (error) {
+    return res.status(400).json(formatErrorResponse(error.details[0].message));
+  }
+
+  try {
+    // Ensure comment is not null
+    if (!comment || comment.trim() === "") {
+      return res.status(400).json(formatErrorResponse("Comment cannot be empty"));
     }
 
-    try {
-      // Create the comment
-      const newComment = await SuppliesModel.createComment({
-        supplyId,
-        name,
-        comment
-      });
-await addUserPoints(userId, 1, 10);
-      return res.status(201).json(formatSuccessResponse('Comment created successfully', newComment));
-    } catch (error) {
-      return res.status(500).json(formatErrorResponse(error.message));
-    }
-  },
+    // Create the comment
+    const newComment = await SuppliesModel.createComment({
+      supplyId,
+      name,
+      comment
+    });
 
-  // Get supply by ID including user contact info, location, and comments
-  getSupplyById: async (req, res) => {
-    const { supplyId } = req.params;
+    // Optionally reward user points
+    await addUserPoints(userId, 1, 10);
 
-    try {
-      const supply = await SuppliesModel.getSupplyById(supplyId);
-      if (supply) {
-        return res.status(200).json(formatSuccessResponse('Supply retrieved successfully', supply));
-      } else {
-        return res.status(404).json(formatErrorResponse('Supply not found'));
-      }
-    } catch (error) {
-      return res.status(500).json(formatErrorResponse(error.message));
+    return res.status(201).json(formatSuccessResponse('Comment created successfully', newComment));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+},
+
+// Get supply by ID including user contact info, location, and comments
+getSupplyById: async (req, res) => {
+  const { supplyId } = req.params;
+
+  try {
+    const supply = await SuppliesModel.getSupplyById(supplyId);
+    if (supply) {
+      return res.status(200).json(formatSuccessResponse('Supply retrieved successfully', supply));
+    } else {
+      return res.status(404).json(formatErrorResponse('Supply not found'));
     }
-  },
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+},
+
 
   // Get supplies with pagination support
   getAllSupplies: async (req, res) => {

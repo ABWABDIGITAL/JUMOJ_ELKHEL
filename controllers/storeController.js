@@ -45,7 +45,7 @@ const StoreController = {
         imageUrl, // Store the image URL
         fileUrls, // Store the file URLs
       });
-      await addUserPoints(userId, 2, 10);
+      await addUserPoints(userId,'create_store');
       res
         .status(201)
         .json(formatSuccessResponse(store, "Store created successfully"));

@@ -42,7 +42,7 @@ router.post('/', authenticateToken, upload.array('images', 5), SupplyController.
 // Get supply by ID (Public route)
 router.get('/:supplyId', SupplyController.getSupplyById);
 router.get('/', SupplyController.getAllSupplies);
-router.post('/:supplyId/comments', SupplyController.createComment);
+router.post('/:supplyId/comments',authenticateToken, SupplyController.createComment);
 
 
 module.exports = router;

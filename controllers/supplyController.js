@@ -59,7 +59,7 @@ const SupplyController = {
   // Create a comment for a supply
   createComment: async (req, res) => {
     const { supplyId, name, comment } = req.body;
-
+    const userId = req.user.id;
     // Validate comment input
     const { error } = commentSchema.validate({ supplyId, name, comment });
     if (error) {

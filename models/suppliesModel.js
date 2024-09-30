@@ -20,7 +20,7 @@ const SuppliesModel = {
       const result = await client.query(
         `INSERT INTO supplies (name, description, user_id, location_id, comment, adv_id, commission_rate)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [name, description, userId, locationId, comment, advId, 2.5]
+        [name, description, userId, locationId, comment, advId, 2.5] // You can make commission_rate dynamic
       );
 
       const supply = result.rows[0];
@@ -41,16 +41,14 @@ const SuppliesModel = {
       return supply;
     } catch (error) {
       await client.query("ROLLBACK");
-      throw error;
+      throw new Error("Error creating supply: " + error.message);
     } finally {
       client.release();
     }
   },
 
   // Get supply by ID including user and location details
-  // Get supply by ID including user and location details
-
-   getSupplyById :async (supplyId) => {
+  getSupplyById: async (supplyId) => {
     const query = `
       SELECT 
         s.id,
@@ -72,7 +70,7 @@ const SuppliesModel = {
         a.title as adv_title,
         a.description as adv_description,
         ARRAY_AGG(i.url) AS images, -- Get images as an array
-        JSON_AGG(c.*) FILTER (WHERE c.id IS NOT NULL) AS comments -- Get comments as a JSON array
+        COALESCE(JSON_AGG(c.* ORDER BY c.created_at) FILTER (WHERE c.id IS NOT NULL), '[]') AS comments -- Ensure comments are ordered and empty array returned when no comments
       FROM 
         supplies s
         LEFT JOIN users u ON s.user_id = u.id
@@ -87,12 +85,13 @@ const SuppliesModel = {
     const result = await pool.query(query, [supplyId]);
     return result.rows[0]; // Return the first supply (should only be one)
   },
-  
-getAllSupplies: async ({ page = 1, limit = 10 }) => {
-  const offset = (page - 1) * limit;
 
-  const result = await pool.query(
-    `SELECT 
+  // Get all supplies with pagination
+  getAllSupplies: async ({ page = 1, limit = 10 }) => {
+    const offset = (page - 1) * limit;
+
+    const result = await pool.query(
+      `SELECT 
         s.id, 
         s.name, 
         s.description, 
@@ -130,11 +129,11 @@ getAllSupplies: async ({ page = 1, limit = 10 }) => {
     LEFT JOIN supply_images si ON s.id = si.supply_id
     GROUP BY s.id, u.id, l.id, a.id
     LIMIT $1 OFFSET $2`,
-    [limit, offset]
-  );
+      [limit, offset]
+    );
 
-  return result.rows;
-},
+    return result.rows;
+  },
 
   // Create a comment for a supply
   createComment: async ({ supplyId, name, comment }) => {

@@ -345,40 +345,43 @@ const UserController = {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
-  // Update user profile
-  updateUser: async (req, res) => {
-    const { userId } = req.params;
+  
+ // Update user profile
+ updateUser: async (req, res) => {
+  const { userId } = req.params;
+  const { name, email, phone, identity, birthday, locationId, password } = req.body;
 
-    const { name, email, phone, identity, birthday, locationId, password } =
-      req.body;
-
-    try {
-      if (!userId) {
-        return res.status(400).json(formatErrorResponse("User ID is required"));
-      }
-
-      const updatedUser = await UserModel.updateUser(userId, {
-        name,
-        email,
-        phone,
-        identity,
-        birthday,
-        locationId,
-        password,
-      });
-      if (updatedUser) {
-        res
-          .status(200)
-          .json(
-            formatSuccessResponse(updatedUser, "User updated successfully")
-          );
-      } else {
-        res.status(404).json(formatErrorResponse("User not found"));
-      }
-    } catch (error) {
-      res.status(500).json(formatErrorResponse(error.message));
+  try {
+    if (!userId) {
+      return res.status(400).json(formatErrorResponse("User ID is required"));
     }
-  },
+
+    // Handle the image if it was uploaded
+    const imageUrl = req.file
+      ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/users/${req.file.filename}`
+      : null;
+
+    // Update user with the new information and image URL
+    const updatedUser = await UserModel.updateUser(userId, {
+      name,
+      email,
+      phone,
+      identity,
+      birthday,
+      locationId,
+      password,
+      imageUrl, // Pass the image URL to the model
+    });
+
+    if (updatedUser) {
+      res.status(200).json(formatSuccessResponse(updatedUser, "User updated successfully"));
+    } else {
+      res.status(404).json(formatErrorResponse("User not found"));
+    }
+  } catch (error) {
+    res.status(500).json(formatErrorResponse(error.message));
+  }
+},
 };
 
 module.exports = UserController;

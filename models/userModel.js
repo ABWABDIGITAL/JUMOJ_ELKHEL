@@ -135,47 +135,48 @@ createUser: async (name, phone, email, key, password, confirmPassword, status) =
   },
 
   // Update user contact information and locationId
-updateUser: async (
-  userId,
-  { name, email, phone, identity, birthday, locationId, password }
-) => {
-  // Construct the base query with COALESCE to update only fields that are provided
-  let query = `UPDATE users SET 
-                name = COALESCE($2, name), 
-                email = COALESCE($3, email), 
-                phone = COALESCE($4, phone), 
-                identity = COALESCE($5, identity),
-                birthday = COALESCE($6, birthday),
-                location_id = COALESCE($7, location_id)`;
+  updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password, imageUrl }) => {
+    let query = `UPDATE users SET 
+                  name = COALESCE($2, name), 
+                  email = COALESCE($3, email), 
+                  phone = COALESCE($4, phone), 
+                  identity = COALESCE($5, identity),
+                  birthday = COALESCE($6, birthday),
+                  location_id = COALESCE($7, location_id)`;
 
-  const values = [userId, name, email, phone, identity, birthday, locationId];
+    const values = [userId, name, email, phone, identity, birthday, locationId];
 
-  // Check if password is provided, and if so, hash and include it in the update
-  if (password) {
-    const hashedPassword = await bcrypt.hash(password.trim(), 10); // Hash the password
-    query += `, password = $8`;
-    values.push(hashedPassword);
-  }
-
-  // Append the WHERE clause and the RETURNING clause to the query
-  query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id`;
-
-  try {
-    // Execute the query and update the user information
-    const result = await pool.query(query, values);
-
-    // Check if the user was updated and fetch the updated user details including location
-    if (result.rows.length > 0) {
-      const updatedUser = await UserModel.getUserByIdWithDetails(userId);
-      return updatedUser;
+    // Check if password is provided and hash it
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password.trim(), 10);
+      query += `, password = $8`;
+      values.push(hashedPassword);
     }
 
-    return null; // Return null if no user was found or updated
-  } catch (error) {
-    console.error("Error updating user:", error.message);
-    throw new Error("An error occurred while updating user information");
-  }
-},searchByLocation: async (locationId, page, limit) => {
+    // Check if imageUrl is provided, and if so, add it to the query
+    if (imageUrl) {
+      query += `, image_url = $9`;
+      values.push(imageUrl);
+    }
+
+    query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id, image_url`;
+
+    try {
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+        // Return the updated user details
+        const updatedUser = await UserModel.getUserByIdWithDetails(userId);
+        return updatedUser;
+      }
+
+      return null; // No user found
+    } catch (error) {
+      console.error("Error updating user:", error.message);
+      throw new Error("An error occurred while updating user information");
+    }
+  },
+searchByLocation: async (locationId, page, limit) => {
   const offset = (page - 1) * limit;
 
   try {

@@ -379,6 +379,7 @@ const UserController = {
       res.status(404).json(formatErrorResponse("User not found"));
     }
   } catch (error) {
+    console.error("Error during user update:", error.message);
     res.status(500).json(formatErrorResponse(error.message));
   }
 },

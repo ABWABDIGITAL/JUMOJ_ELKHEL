@@ -353,8 +353,13 @@ const UserController = {
 
   try {
     if (!userId) {
-      return res.status(400).json(formatErrorResponse("User ID is required"));
+      return res.status(400).json({ success: false, message: "User ID is required" });
     }
+
+    // Log the incoming request details for debugging
+    console.log('Request Params (userId):', userId);
+    console.log('Request Body:', req.body);
+    console.log('Uploaded File:', req.file); // Check if the file has been uploaded
 
     // Handle the image if it was uploaded
     const imageUrl = req.file
@@ -374,15 +379,20 @@ const UserController = {
     });
 
     if (updatedUser) {
-      res.status(200).json(formatSuccessResponse(updatedUser, "User updated successfully"));
+      return res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        data: updatedUser,
+      });
     } else {
-      res.status(404).json(formatErrorResponse("User not found"));
+      return res.status(404).json({ success: false, message: "User not found" });
     }
   } catch (error) {
-    console.error("Error during user update:", error.message);
-    res.status(500).json(formatErrorResponse(error.message));
+    console.error("Error in updateUser controller:", error); // Log the exact error
+    return res.status(500).json({ success: false, message: error.message || "An error occurred, and it has been reported." });
   }
 },
+
 };
 
 module.exports = UserController;

@@ -136,6 +136,9 @@ createUser: async (name, phone, email, key, password, confirmPassword, status) =
 
   // Update user contact information and locationId
   updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password, imageUrl }) => {
+    console.log('Updating user with ID:', userId);
+    console.log('Incoming data:', { name, email, phone, identity, birthday, locationId, password, imageUrl });
+  
     let query = `UPDATE users SET 
                   name = COALESCE($2, name), 
                   email = COALESCE($3, email), 
@@ -143,39 +146,41 @@ createUser: async (name, phone, email, key, password, confirmPassword, status) =
                   identity = COALESCE($5, identity),
                   birthday = COALESCE($6, birthday),
                   location_id = COALESCE($7, location_id)`;
-
+  
     const values = [userId, name, email, phone, identity, birthday, locationId];
-
+  
     // Check if password is provided and hash it
     if (password) {
       const hashedPassword = await bcrypt.hash(password.trim(), 10);
       query += `, password = $8`;
       values.push(hashedPassword);
     }
-
+  
     // Check if imageUrl is provided, and if so, add it to the query
     if (imageUrl) {
       query += `, image_url = $9`;
       values.push(imageUrl);
     }
-
+  
     query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id, image_url`;
-
+  
     try {
       const result = await pool.query(query, values);
-
+      console.log('Query result:', result.rows);
+  
       if (result.rows.length > 0) {
         // Return the updated user details
         const updatedUser = await UserModel.getUserByIdWithDetails(userId);
         return updatedUser;
       }
-
+  
       return null; // No user found
     } catch (error) {
-      console.error("Error updating user:", error.message);
+      console.error("Error in UserModel.updateUser:", error.message);
       throw new Error("An error occurred while updating user information");
     }
   },
+  
 searchByLocation: async (locationId, page, limit) => {
   const offset = (page - 1) * limit;
 

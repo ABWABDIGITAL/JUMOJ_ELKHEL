@@ -346,27 +346,24 @@ const UserController = {
     }
   },
   
- // Update user profile
- updateUser: async (req, res) => {
+// Update user profile
+
+updateUser: async (req, res) => {
   const { userId } = req.params;
   const { name, email, phone, identity, birthday, locationId, password } = req.body;
 
   try {
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID is required" });
+      return res.status(400).json(formatErrorResponse("User ID is required"));
     }
 
-    // Log the incoming request details for debugging
-    console.log('Request Params (userId):', userId);
-    console.log('Request Body:', req.body);
-    console.log('Uploaded File:', req.file); // Check if the file has been uploaded
+    // Get the uploaded image URL
+    let imageUrl;
+    if (req.file) {
+      imageUrl = `http://91.108.102.81:9098/${req.file.path.replace(/\\/g, '/')}`; // Convert Windows-style backslashes to forward slashes
+    }
 
-    // Handle the image if it was uploaded
-    const imageUrl = req.file
-      ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/users/${req.file.filename}`
-      : null;
-
-    // Update user with the new information and image URL
+    // Call updateUser with the image URL
     const updatedUser = await UserModel.updateUser(userId, {
       name,
       email,
@@ -375,21 +372,16 @@ const UserController = {
       birthday,
       locationId,
       password,
-      imageUrl, // Pass the image URL to the model
+      imageUrl,
     });
 
     if (updatedUser) {
-      return res.status(200).json({
-        success: true,
-        message: "User updated successfully",
-        data: updatedUser,
-      });
+      res.status(200).json(formatSuccessResponse(updatedUser, "User updated successfully"));
     } else {
-      return res.status(404).json({ success: false, message: "User not found" });
+      res.status(404).json(formatErrorResponse("User not found"));
     }
   } catch (error) {
-    console.error("Error in updateUser controller:", error); // Log the exact error
-    return res.status(500).json({ success: false, message: error.message || "An error occurred, and it has been reported." });
+    res.status(500).json(formatErrorResponse(error.message));
   }
 },
 

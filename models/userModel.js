@@ -114,25 +114,27 @@ createUser: async (name, phone, email, key, password, confirmPassword, status) =
   },
 
   // Get user by ID with location details and WhatsApp link
-  getUserByIdWithDetails: async (userId) => {
-    const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.phone, u.location_id, u.identity, u.birthday, 
-              l.name as location_name, l.area, l.city
-       FROM users u
-       LEFT JOIN locations l ON u.location_id = l.id
-       WHERE u.id = $1`,
-      [userId]
-    );
+ // Get user by ID with location details and WhatsApp link
+getUserByIdWithDetails: async (userId) => {
+  const result = await pool.query(
+    `SELECT u.id, u.name, u.email, u.phone, u.location_id, u.identity, u.birthday, u.image_url, 
+            l.name as location_name, l.area, l.city
+     FROM users u
+     LEFT JOIN locations l ON u.location_id = l.id
+     WHERE u.id = $1`,
+    [userId]
+  );
 
-    const user = result.rows[0];
+  const user = result.rows[0];
 
-    if (user) {
-      // Add WhatsApp link based on phone number
-      user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, "")}`;
-    }
+  if (user) {
+    // Add WhatsApp link based on phone number
+    user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, "")}`;
+  }
 
-    return user;
-  },
+  return user;
+},
+
 
   // Update user contact information and locationId
 updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password, imageUrl }) => {

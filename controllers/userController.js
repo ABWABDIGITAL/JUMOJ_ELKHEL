@@ -346,8 +346,9 @@ const UserController = {
     }
   },
   
-// Update user profile
 
+
+// Update user profile
 updateUser: async (req, res) => {
   const { userId } = req.params;
   const { name, email, phone, identity, birthday, locationId, password } = req.body;
@@ -384,6 +385,7 @@ updateUser: async (req, res) => {
     res.status(500).json(formatErrorResponse(error.message));
   }
 },
+
 
 };
 

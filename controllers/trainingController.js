@@ -123,9 +123,16 @@ updateTraining: async (req, res) => {
     });
 
     if (updatedTraining) {
-      res.status(200).send(updatedTraining);
+      res.status(200).json({
+        success: true,
+        message: "Training updated successfully",
+        data: updatedTraining,
+      });
     } else {
-      res.status(404).send("<p>Training not found.</p>");
+      res.status(404).json({
+        success: false,
+        message: "Training not found",
+      });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -137,12 +144,23 @@ deleteTraining: async (req, res) => {
   const { trainingId } = req.params;
 
   try {
-    const deletedMessage = await TrainingModel.deleteTraining(trainingId);
-    res.status(200).send(deletedMessage);
+    const deletedTraining = await TrainingModel.deleteTraining(trainingId);
+    if (deletedTraining) {
+      res.status(200).json({
+        success: true,
+        message: `Training titled "${deletedTraining.title}" was successfully deleted.`,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "Training not found",
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 },
+
 
 };
 

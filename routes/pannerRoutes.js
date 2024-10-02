@@ -38,7 +38,7 @@ router.get("/", pannerController.getAllPanners);
 router.get('/:id', pannerController.getPannerById);
 
 // Route to update a panner by ID
-router.put('/:id', pannerController.updatePanner);
+router.put('/:id',upload.single('image'), pannerController.updatePanner);
 
 // Route to delete a panner by ID
 router.delete('/:id', pannerController.deletePanner);

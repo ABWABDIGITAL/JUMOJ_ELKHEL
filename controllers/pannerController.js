@@ -37,33 +37,31 @@ const getPannerById = async (req, res) => {
 };
 
 // Update a panner by ID
-// Update a panner by ID
+// Update a panner by ID with file handling
 const updatePanner = async (req, res) => {
-  const { id } = req.params;  // Panner ID from URL
-  const { description, image, link } = req.body;  // Fields to update
-
-  // Check if required fields are provided
-  if (!description && !image && !link) {
-    return res.status(400).json(formatErrorResponse('No fields to update'));
-  }
+  const { id } = req.params;
+  const { description, link } = req.body;
+  
+  // File handling (if image is provided)
+  const image = req.file 
+    ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/panners/${req.file.filename}`
+    : null;
 
   try {
-    // Attempt to update the panner
+    // Update panner with new fields
     const updatedPanner = await PannerModel.updatePanner(id, description, image, link);
     
     if (updatedPanner) {
-      // Panner updated successfully
-      return res.status(200).json(formatSuccessResponse(updatedPanner, 'Panner updated successfully'));
+      res.status(200).json(formatSuccessResponse(updatedPanner, 'Panner updated successfully'));
     } else {
-      // Panner with provided ID not found
-      return res.status(404).json(formatErrorResponse('Panner not found'));
+      res.status(404).json(formatErrorResponse('Panner not found'));
     }
   } catch (error) {
     console.error("Error updating panner:", error);
-    // Internal server error
-    return res.status(500).json(formatErrorResponse('Failed to update panner'));
+    res.status(500).json(formatErrorResponse('Failed to update panner'));
   }
 };
+
 
 // Delete a panner by ID
 const deletePanner = async (req, res) => {

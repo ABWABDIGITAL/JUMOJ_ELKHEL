@@ -7,28 +7,27 @@ const AdvertisementModel = {
     price,
     departmentId,
     type,
-    videoUrl = null,  // Set default to null
-    image = null,     // Set default to null
+    videoUrl = null,  
+    image = null,     
     createdAt,
     endedAt,
     marketName,
     locationId,
-    father = null,    // Set optional fields default to null
-    mother = null,    // Set optional fields default to null
+    father = null,    
+    mother = null,    
     classification,
     age,
     height,
     priceType,
+    isTrending = false, // Default to false
+    isPromotion = false // Default to false
   }) => {
     const result = await pool.query(
-      `INSERT INTO advertisements (title, description, price, department_id, type, video, image, created_at, ended_at, market_name, location_id, father, mother, classification, age, height, price_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,$17) RETURNING *`,
-      [title, description, price, departmentId, type, videoUrl, image, createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType]
+      `INSERT INTO advertisements (title, description, price, department_id, type, video, image, created_at, ended_at, market_name, location_id, father, mother, classification, age, height, price_type, is_trending, is_promotion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *`,
+      [title, description, price, departmentId, type, videoUrl, image, createdAt, endedAt, marketName, locationId, father, mother, classification, age, height, priceType, isTrending, isPromotion]
     );
-    
 
-
-    // Fetch the full advertisement details with populated department and location info
     const adWithDetails = await pool.query(
       `SELECT a.*, d.name AS department_name, l.name AS location_name, l.city AS location_city, l.latitude, l.longitude
        FROM advertisements a
@@ -40,6 +39,7 @@ const AdvertisementModel = {
 
     return adWithDetails.rows[0];
   },
+
   // Get advertisement by ID
   getAdvertisementById: async (id) => {
     const result = await pool.query(
@@ -55,7 +55,6 @@ const AdvertisementModel = {
     return result.rows[0];
   },
 
-  // Update advertisement details
   updateAdvertisement: async (id, fieldsToUpdate) => {
     const setClauses = [];
     const values = [];
@@ -83,6 +82,7 @@ const AdvertisementModel = {
 
     return result.rows[0];
   },
+
 
   // Delete an advertisement by ID
   deleteAdvertisement: async (id) => {
@@ -115,6 +115,30 @@ const AdvertisementModel = {
     );
     return result.rows;
   },
+  // Get trending advertisements
+getTrendingAdvertisements: async () => {
+  const result = await pool.query(
+    `SELECT a.*, d.name AS department_name, l.name AS location_name 
+     FROM advertisements a
+     JOIN departments d ON a.department_id = d.id
+     JOIN locations l ON a.location_id = l.id
+     WHERE a.is_trending = TRUE`
+  );
+  return result.rows;
+},
+
+// Get promotion advertisements
+getPromotionAdvertisements: async () => {
+  const result = await pool.query(
+    `SELECT a.*, d.name AS department_name, l.name AS location_name 
+     FROM advertisements a
+     JOIN departments d ON a.department_id = d.id
+     JOIN locations l ON a.location_id = l.id
+     WHERE a.is_promotion = TRUE`
+  );
+  return result.rows;
+},
+
 };
 
 module.exports = AdvertisementModel;

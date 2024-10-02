@@ -7,11 +7,12 @@ const { addUserPoints } = require("../models/addUserPointsModel");
 
 const AdvertisementController = {
   // Create a new advertisement
-  createAdvertisement: async (req, res) => {
+   createAdvertisement :async (req, res) => {
     try {
-      // Extract userId from the request object, assuming authenticateToken middleware attaches user info to req.user
-      const userId = req.user.id; // Ensure this matches how you're setting user info in authenticateToken
-
+      // Extract userId from the authenticated request
+      const userId = req.user.id;
+     
+      // Destructure required fields from the request body
       const {
         title,
         description,
@@ -28,22 +29,33 @@ const AdvertisementController = {
         age,
         height,
         priceType,
+        isTrending = false,   // Default is false if not provided
+        isPromotion = false,  // Default is false if not provided
       } = req.body;
-
-      // Handle image and video URLs
-      const image = req.files?.["image"]
+  
+      // Validate required fields
+      if (!title || !description || !price || !departmentId || !locationId) {
+        return res.status(400).json(formatErrorResponse("Missing required fields"));
+      }
+  
+      // Handle image upload (assuming multer is handling the file upload)
+      const image = req.files?.image
         ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/advertisements/${req.files["image"][0].filename}`
         : null;
-
-      const videoUrl = req.files?.["video"]
+  
+      // Handle video upload or use URL from request body
+      const videoUrl = req.files?.video
         ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/videos/${req.files["video"][0].filename}`
-        : req.body.video;
-
-      // Ensure price is a number
+        : req.body.video || null;
+  
+      // Ensure price is a valid number
       const formattedPrice = parseFloat(price);
-
-      // Call the model to save the advertisement to the database
-      const newAd = await AdvertisementModel.createAdvertisement({
+      if (isNaN(formattedPrice)) {
+        return res.status(400).json(formatErrorResponse("Invalid price format"));
+      }
+  
+      // Prepare the advertisement data for insertion
+      const advertisementData = {
         title,
         description,
         price: formattedPrice,
@@ -61,25 +73,29 @@ const AdvertisementController = {
         age,
         height,
         priceType,
-      });
-
-      // Award points to the user for creating an ad based on userId extracted from token
+        isTrending,     // Add trending flag
+        isPromotion,    // Add promotion flag
+      };
+  
+      // Call the model to create the advertisement
+      const newAd = await AdvertisementModel.createAdvertisement(advertisementData);
+  
+      // Award points to the user for creating the advertisement
       await addUserPoints(userId, 1, 10); // Assuming 10 points are awarded for this action
-
+  
+      // Respond with success
       return res
         .status(201)
-        .json(
-          formatSuccessResponse(newAd, "Advertisement created successfully")
-        );
+        .json(formatSuccessResponse(newAd, "Advertisement created successfully"));
+  
     } catch (error) {
       console.error("Error creating advertisement:", error);
       return res
         .status(500)
-        .json(
-          formatErrorResponse("Error creating advertisement", error.message)
-        );
+        .json(formatErrorResponse("Error creating advertisement", error.message));
     }
   },
+  
 
   // Get advertisement by ID
   getAdvertisementById: async (req, res) => {

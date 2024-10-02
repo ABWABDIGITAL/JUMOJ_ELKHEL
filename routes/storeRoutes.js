@@ -61,5 +61,11 @@ router.get("/:id", StoreController.getStoreById);
 
 // Get all stores (Public route)
 router.get("/", StoreController.getAllStores);
+// Update a store by ID
+router.put('/:id', authenticateUser, StoreController.updateStore); // Update this function in your controller
+
+// Delete a store by ID
+router.delete('/:id', authenticateUser, StoreController.deleteStore); // Update this function in your controller
+
 
 module.exports = router;

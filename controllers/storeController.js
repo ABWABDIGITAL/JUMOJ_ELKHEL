@@ -84,6 +84,69 @@ const StoreController = {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
+  updateStore: async (req, res) => {
+    const { id } = req.params;
+    const { name, locationId, timeOfWorks } = req.body;
+    const userId = req.user.id;
+    const image = req.files["image"] ? req.files["image"][0] : null; // Single image
+    const files = req.files["files"] || []; // Array of files
+
+    // Construct image URL
+    const imageUrl = image
+      ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/stores/${image.filename}`
+      : null;
+
+    // Get URLs for uploaded files
+    const fileUrls = files.map(
+      (file) =>
+        `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/stores/${file.filename}`
+    );
+
+    try {
+      // Validate required fields
+      if (!id) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("Store ID is required"));
+      }
+
+      // Update the store
+      const updatedStore = await StoreModel.updateStoreById({
+        id,
+        imageUrl,
+        fileUrls,
+      });
+
+      if (updatedStore) {
+        await addUserPoints(userId, 'update_store');
+        res
+          .status(200)
+          .json(formatSuccessResponse(updatedStore, "Store updated successfully"));
+      } else {
+        res.status(404).json(formatErrorResponse("Store not found"));
+      }
+    } catch (error) {
+      res.status(500).json(formatErrorResponse(error.message));
+    }
+  },
+
+  // Delete store by ID
+  deleteStore: async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const deletedStore = await StoreModel.deleteStoreById(id); // Make sure this method exists in StoreModel
+      if (deletedStore) {
+        res
+          .status(200)
+          .json(formatSuccessResponse(null, "Store deleted successfully"));
+      } else {
+        res.status(404).json(formatErrorResponse("Store not found"));
+      }
+    } catch (error) {
+      res.status(500).json(formatErrorResponse(error.message));
+    }
+  },
 };
 
 module.exports = StoreController;

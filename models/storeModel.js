@@ -81,30 +81,58 @@ const StoreModel = {
     
   },  
 
-  // Update store by ID with new image and files
-  updateStoreById: async ({ id, imageUrl, fileUrls }) => {
-    const client = await pool.connect();
+ // Update store by ID with new information
+ updateStoreById: async ({ id, name, locationId, timeOfWorks, imageUrl, fileUrls }) => {
+  const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+  try {
+    await client.query('BEGIN');
 
-      const result = await client.query(
-        `UPDATE stores
-         SET image_url = $1, file_urls = $2
-         WHERE id = $3 RETURNING *`,
-        [imageUrl, JSON.stringify(fileUrls), id]
-      );
+    const result = await client.query(
+      `UPDATE stores
+       SET name = COALESCE($1, name), 
+           location_id = COALESCE($2, location_id), 
+           time_of_works = COALESCE($3, time_of_works), 
+           image_url = COALESCE($4, image_url), 
+           file_urls = COALESCE($5, file_urls)
+       WHERE id = $6 RETURNING *`,
+      [name, locationId, timeOfWorks, imageUrl, JSON.stringify(fileUrls), id]
+    );
 
-      const store = result.rows[0];
-      await client.query('COMMIT');
-      return store;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    const store = result.rows[0];
+    await client.query('COMMIT');
+    return store;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
+},
+
+// Delete store by ID
+deleteStoreById: async (id) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `DELETE FROM stores WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    const deletedStore = result.rows[0];
+    await client.query('COMMIT');
+    return deletedStore; // return deleted store details if needed
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 };
+
 
 module.exports = StoreModel;

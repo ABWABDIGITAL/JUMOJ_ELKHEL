@@ -37,38 +37,56 @@ const getPannerById = async (req, res) => {
 };
 
 // Update a panner by ID
+// Update a panner by ID
 const updatePanner = async (req, res) => {
-  const { id } = req.params;
-  const { description, image, link } = req.body;
+  const { id } = req.params;  // Panner ID from URL
+  const { description, image, link } = req.body;  // Fields to update
+
+  // Check if required fields are provided
+  if (!description && !image && !link) {
+    return res.status(400).json(formatErrorResponse('No fields to update'));
+  }
 
   try {
+    // Attempt to update the panner
     const updatedPanner = await PannerModel.updatePanner(id, description, image, link);
+    
     if (updatedPanner) {
-      res.status(200).json(formatSuccessResponse(updatedPanner, 'Panner updated successfully'));
+      // Panner updated successfully
+      return res.status(200).json(formatSuccessResponse(updatedPanner, 'Panner updated successfully'));
     } else {
-      res.status(404).json(formatErrorResponse('Panner not found'));
+      // Panner with provided ID not found
+      return res.status(404).json(formatErrorResponse('Panner not found'));
     }
   } catch (error) {
     console.error("Error updating panner:", error);
-    res.status(500).json(formatErrorResponse('Failed to update panner'));
+    // Internal server error
+    return res.status(500).json(formatErrorResponse('Failed to update panner'));
   }
 };
 
 // Delete a panner by ID
 const deletePanner = async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params;  // Panner ID from URL
 
   try {
+    // Attempt to delete the panner
     const deletedPanner = await PannerModel.deletePanner(id);
+    
     if (deletedPanner) {
-      res.status(200).json(formatSuccessResponse(null, 'Panner deleted successfully'));
+      // Panner deleted successfully
+      return res.status(200).json(formatSuccessResponse(null, 'Panner deleted successfully'));
     } else {
-      res.status(404).json(formatErrorResponse('Panner not found'));
+      // Panner with provided ID not found
+      return res.status(404).json(formatErrorResponse('Panner not found'));
     }
   } catch (error) {
     console.error("Error deleting panner:", error);
-    res.status(500).json(formatErrorResponse('Failed to delete panner'));}
-  };
+    // Internal server error
+    return res.status(500).json(formatErrorResponse('Failed to delete panner'));
+  }
+};
+
   // Get all panners
 const getAllPanners = async (req, res) => {
     try {

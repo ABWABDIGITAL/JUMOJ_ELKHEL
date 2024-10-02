@@ -100,6 +100,50 @@ const TrainingController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
+ 
+// Update training by ID
+updateTraining: async (req, res) => {
+  const { trainingId } = req.params;
+  const { title, description, price, period, age, trainingFor, training_type } = req.body;
+
+  const image = req.file
+    ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/trainings/${req.file.filename}`
+    : null;
+
+  try {
+    const updatedTraining = await TrainingModel.updateTraining(trainingId, {
+      title,
+      description,
+      price,
+      period,
+      age,
+      trainingFor,
+      training_type,
+      image,
+    });
+
+    if (updatedTraining) {
+      res.status(200).send(updatedTraining);
+    } else {
+      res.status(404).send("<p>Training not found.</p>");
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+},
+
+// Delete training by ID
+deleteTraining: async (req, res) => {
+  const { trainingId } = req.params;
+
+  try {
+    const deletedMessage = await TrainingModel.deleteTraining(trainingId);
+    res.status(200).send(deletedMessage);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+},
+
 };
 
 module.exports = TrainingController;

@@ -42,5 +42,10 @@ router.get('/:trainingId', TrainingController.getTrainingById);
 
 // Get all trainings (Public route)
 router.get('/', TrainingController.getAllTrainings);
+// Update training
+router.put("/trainings/:trainingId", TrainingController.updateTraining);
+
+// Delete training
+router.delete("/trainings/:trainingId", TrainingController.deleteTraining);
 
 module.exports = router;

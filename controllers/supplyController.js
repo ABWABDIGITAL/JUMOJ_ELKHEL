@@ -15,7 +15,7 @@ const supplySchema = Joi.object({
 });
 
 const commentSchema = Joi.object({
-  supplyId: Joi.number().integer().required(),
+  supplyId: Joi.number().integer(),
   name: Joi.string().min(3).max(255).required(),
   comment: Joi.string().allow(null, '').optional(),
 });

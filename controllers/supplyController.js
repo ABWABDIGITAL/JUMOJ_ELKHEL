@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Joi = require('joi');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
 const { addUserPoints } = require("../models/addUserPointsModel");
+const pool = require('../config/db');
 
 // Define schemas
 const supplySchema = Joi.object({

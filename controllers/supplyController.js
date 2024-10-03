@@ -219,10 +219,23 @@ updateComment: async (req, res) => {
     }
   },
   // Delete comment by commentId
-  deleteComment: async (commentId) => {
-    const result = await pool.query(`DELETE FROM comments WHERE id = $1 RETURNING *`, [commentId]);
-    return result.rows[0];
-  },
+ 
+ deleteComment: async (req, res) => {
+  const { commentId } = req.params;
+
+  try {
+    // Delete the comment
+    const deletedComment = await SuppliesModel.deleteComment(commentId);
+    if (!deletedComment) {
+      return res.status(404).json(formatErrorResponse('Comment not found'));
+    }
+
+    return res.status(200).json(formatSuccessResponse('Comment deleted successfully'));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse('Error deleting comment: ' + error.message));
+  }
+},
+
 };
 
 module.exports = SupplyController;

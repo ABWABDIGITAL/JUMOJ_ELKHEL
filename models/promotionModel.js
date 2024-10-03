@@ -76,11 +76,47 @@ const getPromotions = async () => {
     return result.rows[0];
   };
   
-  
+  // Function to update an existing promotion
+const updatePromotion = async (promotionId, updatedFields) => {
+  const fields = [];
+  const values = [];
+
+  Object.keys(updatedFields).forEach((key, index) => {
+    if (updatedFields[key] !== undefined) {  // Skip undefined fields
+      fields.push(`${key} = $${index + 1}`);
+      values.push(updatedFields[key]);
+    }
+  });
+
+  if (fields.length === 0) return null; // Nothing to update
+
+  const query = `
+    UPDATE promotions
+    SET ${fields.join(', ')}
+    WHERE id = $${values.length + 1}
+    RETURNING *;
+  `;
+
+  const result = await pool.query(query, [...values, promotionId]);
+  return result.rows[0];
+};
+
+// Function to delete a promotion
+const deletePromotion = async (promotionId) => {
+  const query = `DELETE FROM promotions WHERE id = $1 RETURNING *;`;
+  const values = [promotionId];
+  const result = await pool.query(query, values);
+  return result.rows[0]; // Return the deleted promotion
+};
+
+
 
 module.exports = {
   createPromotion,
   linkAdvertisementPromotion,
   getPromotions,
   getPromotionById,
+  updatePromotion,   // Export update function
+  deletePromotion,   // Export delete function
 };
+

@@ -390,7 +390,21 @@ updateUser: async (req, res) => {
     res.status(500).json(formatErrorResponse(error.message));
   }
 },
+ logoutUser : async (req, res) => {
+  const accessToken = req.headers.authorization?.split(" ")[1];
+  if (!accessToken) {
+      return res.status(401).json(formatErrorResponse("Access token is required"));
+  }
 
+  try {
+      // Invalidate the access token
+      await UserModel.invalidateAccessToken(accessToken);
+
+      return res.status(200).json(formatSuccessResponse(null, "Logged out successfully"));
+  } catch (error) {
+      console.error("Error logging out:", error.message);
+      return res.status(500).json(formatErrorResponse("An internal error occurred"));
+  }},
 
 };
 

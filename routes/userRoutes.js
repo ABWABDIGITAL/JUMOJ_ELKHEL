@@ -49,8 +49,7 @@ router.post('/verify-otp', UserController.verifyOtp);
 router.post('/create-custom-token', UserController.createCustomToken);
 // Update user profile (Requires authentication)
 router.put('/auth/:userId', upload.single('image'), UserController.updateUser);
-
-
+router.post('/auth/logout',authenticateToken , UserController.logoutUser);
 
 // Route to update user contact information
 router.put('/contact-info', UserController.updateUserContactInfo);

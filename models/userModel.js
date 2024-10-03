@@ -213,8 +213,22 @@ searchByLocation: async (locationId, page, limit) => {
   } catch (error) {
     throw new Error(`Database query failed: ${error.message}`); // Handle any database errors
   }
-}
+},// Function to invalidate the access token
+ invalidateAccessToken :async (token) => {
+    const query = 'INSERT INTO invalidated_tokens (token) VALUES ($1) ON CONFLICT (token) DO NOTHING'; // Insert token and ignore if it already exists
+    const values = [token];
+    await pool.query(query, values);
+},
+
+// Function to check if an access token is invalidated
+ isTokenInvalidated : async (token) => {
+    const query = 'SELECT * FROM invalidated_tokens WHERE token = $1';
+    const values = [token];
+    const result = await pool.query(query, values);
+    return result.rowCount > 0; }// Return true if the token is found
 };
+
+
 
 
   

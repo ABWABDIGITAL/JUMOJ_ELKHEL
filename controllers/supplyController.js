@@ -138,17 +138,23 @@ updateSupply: async (req, res) => {
   const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
   try {
-    // Update the supply in the database
-    const updatedSupply = await SuppliesModel.updateSupply(supplyId, {
-      name,
-      description,
-      location_id: locationId, // Use correct column name
-      adv_id: advId,           // Use correct column name
-      images
-    });
+    // Prepare the fields that need to be updated (only those provided)
+    const updatedFields = {};
+    if (name) updatedFields.name = name;
+    if (description) updatedFields.description = description;
+    if (locationId) updatedFields.location_id = locationId;
+    if (advId) updatedFields.adv_id = advId;
+
+    // Update the supply information in the database only with provided fields
+    const updatedSupply = await SuppliesModel.updateSupply(supplyId, updatedFields);
 
     if (!updatedSupply) {
       return res.status(404).json(formatErrorResponse('Supply not found'));
+    }
+
+    // If there are images, update the images in the supply_images table
+    if (images.length > 0) {
+      await SuppliesModel.updateSupplyImages(supplyId, images);
     }
 
     return res.status(200).json(formatSuccessResponse('Supply updated successfully', updatedSupply));

@@ -237,40 +237,37 @@ const SuppliesModel = {
     const client = await pool.connect();
   
     try {
-      await client.query("BEGIN");
-  
-      // Build the dynamic update query
-      const setValues = [];
-      const queryParams = [];
-      let paramIndex = 1;
-  
-      for (const [field, value] of Object.entries(updatedFields)) {
-        if (value !== undefined) { // Only update fields that are provided
-          setValues.push(`${field} = $${paramIndex}`);
-          queryParams.push(value);
-          paramIndex++;
-        }
+      if (Object.keys(updatedFields).length === 0) {
+        throw new Error("No fields provided to update");
       }
   
-      if (setValues.length === 0) {
-        throw new Error("No valid fields provided for update");
-      }
+      // Build dynamic query for updating only provided fields
+      const setClauses = [];
+      const values = [];
   
-      queryParams.push(supplyId); // Add supplyId as the last parameter
+      Object.keys(updatedFields).forEach((field, index) => {
+        setClauses.push(`${field} = $${index + 1}`);
+        values.push(updatedFields[field]);
+      });
   
-      const updateQuery = `UPDATE supplies SET ${setValues.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+      const query = `
+        UPDATE supplies
+        SET ${setClauses.join(', ')}
+        WHERE id = $${values.length + 1}
+        RETURNING *;
+      `;
+      values.push(supplyId); // Add supplyId as the last parameter
   
-      const result = await client.query(updateQuery, queryParams);
-      await client.query("COMMIT");
+      const result = await client.query(query, values);
   
-      return result.rows[0];
+      return result.rows[0]; // Return the updated supply
     } catch (error) {
-      await client.query("ROLLBACK");
       throw new Error('Error updating supply: ' + error.message);
     } finally {
       client.release();
     }
   },
+  
   
   // Delete a comment
   deleteComment: async (req, res) => {

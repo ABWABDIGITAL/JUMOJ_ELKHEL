@@ -174,46 +174,54 @@ const SuppliesModel = {
     return result.rows[0];
   },
    // Update supply by supplyId
-   updateSupply: async (supplyId, { name, description, locationId, advId, images }) => {
+   updateSupply: async (supplyId, updatedFields) => {
     const client = await pool.connect();
+  
     try {
-      await client.query('BEGIN');
-
-      // Update the supply
-      const updateSupplyQuery = `
-        UPDATE supplies 
-        SET name = $1, description = $2, location_id = $3, adv_id = $4, updated_at = NOW()
-        WHERE id = $5
-        RETURNING *;
-      `;
-      const result = await client.query(updateSupplyQuery, [name, description, locationId, advId, supplyId]);
-
-      const supply = result.rows[0];
-      if (!supply) {
-        return null;
+      await client.query("BEGIN");
+  
+      // Build the dynamic update query, using the correct snake_case column names
+      const setValues = [];
+      const queryParams = [];
+      let paramIndex = 1;
+  
+      // Map camelCase fields to their corresponding snake_case database columns
+      const fieldMapping = {
+        name: 'name',
+        description: 'description',
+        locationId: 'location_id', // Corrected from locationId to location_id
+        advId: 'adv_id', // Corrected from advId to adv_id
+        images: 'images'
+      };
+  
+      for (const [field, value] of Object.entries(updatedFields)) {
+        if (value !== undefined && fieldMapping[field]) {
+          setValues.push(`${fieldMapping[field]} = $${paramIndex}`);
+          queryParams.push(value);
+          paramIndex++;
+        }
       }
-
-      // If there are new images, update them
-      if (images && images.length > 0) {
-        // Delete old images
-        await client.query(`DELETE FROM supply_images WHERE supply_id = $1`, [supplyId]);
-
-        // Insert new images
-        const imagePromises = images.map(imageUrl => {
-          return client.query(`INSERT INTO supply_images (supply_id, image_url) VALUES ($1, $2)`, [supplyId, imageUrl]);
-        });
-        await Promise.all(imagePromises);
+  
+      if (setValues.length === 0) {
+        throw new Error("No valid fields provided for update");
       }
-
-      await client.query('COMMIT');
-      return supply;
+  
+      queryParams.push(supplyId); // Add supplyId as the last parameter
+  
+      const updateQuery = `UPDATE supplies SET ${setValues.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+  
+      const result = await client.query(updateQuery, queryParams);
+      await client.query("COMMIT");
+  
+      return result.rows[0];
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw new Error('Error updating supply: ' + error.message);
     } finally {
       client.release();
     }
   },
+  
 
   // Update comment by commentId
   updateComment: async (commentId, { name, comment }) => {
@@ -223,23 +231,45 @@ const SuppliesModel = {
     );
     return result.rows[0];
   },
-   // Delete a supply
-   deleteSupply: async (req, res) => {
-    const { supplyId } = req.params;
-
+  updateSupply: async (supplyId, updatedFields) => {
+    const client = await pool.connect();
+  
     try {
-      // Delete the supply
-      const deletedSupply = await SuppliesModel.deleteSupply(supplyId);
-      if (!deletedSupply) {
-        return res.status(404).json(formatErrorResponse('Supply not found'));
+      await client.query("BEGIN");
+  
+      // Build the dynamic update query
+      const setValues = [];
+      const queryParams = [];
+      let paramIndex = 1;
+  
+      for (const [field, value] of Object.entries(updatedFields)) {
+        if (value !== undefined) { // Only update fields that are provided
+          setValues.push(`${field} = $${paramIndex}`);
+          queryParams.push(value);
+          paramIndex++;
+        }
       }
-
-      return res.status(200).json(formatSuccessResponse('Supply deleted successfully'));
+  
+      if (setValues.length === 0) {
+        throw new Error("No valid fields provided for update");
+      }
+  
+      queryParams.push(supplyId); // Add supplyId as the last parameter
+  
+      const updateQuery = `UPDATE supplies SET ${setValues.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+  
+      const result = await client.query(updateQuery, queryParams);
+      await client.query("COMMIT");
+  
+      return result.rows[0];
     } catch (error) {
-      return res.status(500).json(formatErrorResponse('Error deleting supply: ' + error.message));
+      await client.query("ROLLBACK");
+      throw new Error('Error updating supply: ' + error.message);
+    } finally {
+      client.release();
     }
   },
-
+  
   // Delete a comment
   deleteComment: async (req, res) => {
     const { commentId } = req.params;

@@ -44,10 +44,10 @@ router.get('/:supplyId', SupplyController.getSupplyById);
 router.get('/', SupplyController.getAllSupplies);
 router.post('/:supplyId/comments',authenticateToken, SupplyController.createComment);
 // Update an existing supply
-router.put('/supplies/:supplyId', verifyToken, upload.array('images', 10), SupplyController.updateSupply);
+router.put('/supplies/:supplyId', upload.array('images', 10), SupplyController.updateSupply);
 
 // Delete a supply
-router.delete('/supplies/:supplyId', verifyToken, SupplyController.deleteSupply);
+router.delete('/supplies/:supplyId',  SupplyController.deleteSupply);
 
 
 // Update a comment

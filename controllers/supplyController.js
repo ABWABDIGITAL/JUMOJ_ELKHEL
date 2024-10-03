@@ -137,9 +137,14 @@ updateSupply: async (req, res) => {
   const { name, description, locationId, advId } = req.body;
   const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
+  // If supplyId is missing or invalid
+  if (!supplyId || isNaN(supplyId)) {
+    return res.status(400).json(formatErrorResponse('Invalid supply ID'));
+  }
+
   try {
-    // Validate the input with Joi schema
-    const { error } = supplySchema.validate({ name, description, locationId, advId, images });
+    // Validate the input (allow partial updates, so fields are optional)
+    const { error } = supplySchema.validate({ name, description, locationId, advId, images }, { allowUnknown: true });
     if (error) {
       return res.status(400).json(formatErrorResponse(error.details[0].message));
     }
@@ -162,6 +167,7 @@ updateSupply: async (req, res) => {
     return res.status(500).json(formatErrorResponse('Error updating supply: ' + error.message));
   }
 },
+
 
 // Update an existing comment
 updateComment: async (req, res) => {
@@ -187,6 +193,33 @@ updateComment: async (req, res) => {
     return res.status(500).json(formatErrorResponse('Error updating comment: ' + error.message));
   }
 },
+// Delete supply by supplyId
+  deleteSupply: async (supplyId) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // First, delete associated images
+      await client.query(`DELETE FROM supply_images WHERE supply_id = $1`, [supplyId]);
+
+      // Then, delete the supply itself
+      const result = await client.query(`DELETE FROM supplies WHERE id = $1 RETURNING *`, [supplyId]);
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error('Error deleting supply: ' + error.message);
+    } finally {
+      client.release();
+    }
+  },
+
+  // Delete comment by commentId
+  deleteComment: async (commentId) => {
+    const result = await pool.query(`DELETE FROM comments WHERE id = $1 RETURNING *`, [commentId]);
+    return result.rows[0];
+  },
 };
 
 module.exports = SupplyController;

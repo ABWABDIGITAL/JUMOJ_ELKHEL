@@ -85,17 +85,19 @@ const StoreController = {
     }
   },
   updateStore: async (req, res) => {
-    const { id } = req.params; // Retrieve the 'id' from the request parameters
+    const { id } = req.params;
     const { name, locationId, timeOfWorks } = req.body;
-    const image = req.files["image"] ? req.files["image"][0] : null;
-    const files = req.files["files"] || [];
   
-    // Construct image URL
+    // Check if files exist and correctly extract image and files
+    const image = req.files && req.files["image"] ? req.files["image"][0] : null; // Single image
+    const files = req.files && req.files["files"] ? req.files["files"] : []; // Array of files
+  
+    // Construct image URL if image is provided
     const imageUrl = image
       ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/stores/${image.filename}`
       : null;
   
-    // Get file URLs
+    // Get file URLs for uploaded files
     const fileUrls = files.map(
       (file) => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/stores/${file.filename}`
     );
@@ -110,8 +112,8 @@ const StoreController = {
         name,
         locationId,
         timeOfWorks,
-        imageUrl,
-        fileUrls,
+        imageUrl,  // Only include image URL if image is provided
+        fileUrls,  // Only include file URLs if files are provided
       });
   
       if (updatedStore) {
@@ -120,9 +122,11 @@ const StoreController = {
         res.status(404).json(formatErrorResponse("Store not found"));
       }
     } catch (error) {
-      res.status(500).json(formatErrorResponse(error.message));
+      console.error("Error updating store:", error);
+      res.status(500).json(formatErrorResponse("Failed to update store"));
     }
-  },  
+  },
+   
   // Delete store by ID
   deleteStore: async (req, res) => {
     const { id } = req.params;

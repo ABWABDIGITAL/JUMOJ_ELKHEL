@@ -4,6 +4,8 @@ const {
   createPromotion,
   getPromotionsController,
   getPromotionByIdController,
+  updatePromotionController ,
+  deletePromotionController
 } = require("../controllers/promotionController");
 
 const router = express.Router();
@@ -14,4 +16,7 @@ router.post("", createPromotion);
 // Get all promotions
 router.get("/", getPromotionsController);
 router.get("/:id", getPromotionByIdController);
+router.put("/:id", updatePromotionController);
+router.delete("/:id", deletePromotionController);
+
 module.exports = router;

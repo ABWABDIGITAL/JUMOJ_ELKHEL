@@ -191,27 +191,21 @@ updateComment: async (req, res) => {
   }
 },
 // Delete supply by supplyId
-  deleteSupply: async (supplyId) => {
-    const client = await pool.connect();
+  deleteSupply: async (req, res) => {
+    const { supplyId } = req.params;
+
     try {
-      await client.query('BEGIN');
+      // Delete the supply
+      const deletedSupply = await SuppliesModel.deleteSupply(supplyId);
+      if (!deletedSupply) {
+        return res.status(404).json(formatErrorResponse('Supply not found'));
+      }
 
-      // First, delete associated images
-      await client.query(`DELETE FROM supply_images WHERE supply_id = $1`, [supplyId]);
-
-      // Then, delete the supply itself
-      const result = await client.query(`DELETE FROM supplies WHERE id = $1 RETURNING *`, [supplyId]);
-
-      await client.query('COMMIT');
-      return result.rows[0];
+      return res.status(200).json(formatSuccessResponse('Supply deleted successfully'));
     } catch (error) {
-      await client.query('ROLLBACK');
-      throw new Error('Error deleting supply: ' + error.message);
-    } finally {
-      client.release();
+      return res.status(500).json(formatErrorResponse('Error deleting supply: ' + error.message));
     }
   },
-
   // Delete comment by commentId
   deleteComment: async (commentId) => {
     const result = await pool.query(`DELETE FROM comments WHERE id = $1 RETURNING *`, [commentId]);

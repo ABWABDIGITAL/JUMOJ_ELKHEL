@@ -116,23 +116,26 @@ const UserController = {
   },
 
   loginUser: async (req, res) => {
-    const { phone, password } = req.body;
+    const { phone, key, password } = req.body;
+  
+    // Validate input
+    if (!phone || !key || !password) {
+      return res
+        .status(400)
+        .json(formatErrorResponse("Phone number, key (country code), and password are required"));
+    }
+  
     try {
-      if (!phone || !password) {
-        return res
-          .status(400)
-          .json(formatErrorResponse("Phone number and password are required"));
-      }
-
-      const user = await UserModel.getUserByPhone(phone);
-      if (
-        user &&
-        user.password &&
-        (await bcrypt.compare(password, user.password))
-      ) {
+      // Fetch the user using both phone and key
+      const user = await UserModel.getUserByPhoneAndKey(phone, key);
+  
+      // Check if the user exists and validate the password
+      if (user && user.password && (await bcrypt.compare(password, user.password))) {
+        // Generate tokens if login is successful
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
-        res
+        
+        return res
           .status(200)
           .json(
             formatSuccessResponse(
@@ -141,15 +144,17 @@ const UserController = {
             )
           );
       } else {
-        res
+        return res
           .status(401)
-          .json(formatErrorResponse("Invalid phone number or password"));
+          .json(formatErrorResponse("Invalid phone number, key, or password"));
       }
     } catch (error) {
+      // Capture any errors that occur during the process
       Sentry.captureException(error); // Capture error with Sentry
-      res.status(500).json(formatErrorResponse(error.message));
+      return res.status(500).json(formatErrorResponse(error.message));
     }
-  },
+  }
+,  
 
   resetPassword: async (req, res) => {
     const { password, confirmPassword } = req.body;

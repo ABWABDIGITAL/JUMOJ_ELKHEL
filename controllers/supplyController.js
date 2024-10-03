@@ -137,24 +137,13 @@ updateSupply: async (req, res) => {
   const { name, description, locationId, advId } = req.body;
   const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
-  // If supplyId is missing or invalid
-  if (!supplyId || isNaN(supplyId)) {
-    return res.status(400).json(formatErrorResponse('Invalid supply ID'));
-  }
-
   try {
-    // Validate the input (allow partial updates, so fields are optional)
-    const { error } = supplySchema.validate({ name, description, locationId, advId, images }, { allowUnknown: true });
-    if (error) {
-      return res.status(400).json(formatErrorResponse(error.details[0].message));
-    }
-
     // Update the supply in the database
     const updatedSupply = await SuppliesModel.updateSupply(supplyId, {
       name,
       description,
-      locationId,
-      advId,
+      location_id: locationId, // Use correct column name
+      adv_id: advId,           // Use correct column name
       images
     });
 
@@ -167,6 +156,7 @@ updateSupply: async (req, res) => {
     return res.status(500).json(formatErrorResponse('Error updating supply: ' + error.message));
   }
 },
+
 
 
 // Update an existing comment

@@ -173,6 +173,115 @@ const SuppliesModel = {
 
     return result.rows[0];
   },
+   // Update supply by supplyId
+   updateSupply: async (supplyId, { name, description, locationId, advId, images }) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Update the supply
+      const updateSupplyQuery = `
+        UPDATE supplies 
+        SET name = $1, description = $2, location_id = $3, adv_id = $4, updated_at = NOW()
+        WHERE id = $5
+        RETURNING *;
+      `;
+      const result = await client.query(updateSupplyQuery, [name, description, locationId, advId, supplyId]);
+
+      const supply = result.rows[0];
+      if (!supply) {
+        return null;
+      }
+
+      // If there are new images, update them
+      if (images && images.length > 0) {
+        // Delete old images
+        await client.query(`DELETE FROM supply_images WHERE supply_id = $1`, [supplyId]);
+
+        // Insert new images
+        const imagePromises = images.map(imageUrl => {
+          return client.query(`INSERT INTO supply_images (supply_id, image_url) VALUES ($1, $2)`, [supplyId, imageUrl]);
+        });
+        await Promise.all(imagePromises);
+      }
+
+      await client.query('COMMIT');
+      return supply;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error('Error updating supply: ' + error.message);
+    } finally {
+      client.release();
+    }
+  },
+
+  // Update comment by commentId
+  updateComment: async (commentId, { name, comment }) => {
+    const result = await pool.query(
+      `UPDATE comments SET name = $1, comment = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
+      [name, comment, commentId]
+    );
+    return result.rows[0];
+  },
+   // Delete a supply
+   deleteSupply: async (req, res) => {
+    const { supplyId } = req.params;
+
+    try {
+      // Delete the supply
+      const deletedSupply = await SuppliesModel.deleteSupply(supplyId);
+      if (!deletedSupply) {
+        return res.status(404).json(formatErrorResponse('Supply not found'));
+      }
+
+      return res.status(200).json(formatSuccessResponse('Supply deleted successfully'));
+    } catch (error) {
+      return res.status(500).json(formatErrorResponse('Error deleting supply: ' + error.message));
+    }
+  },
+
+  // Delete a comment
+  deleteComment: async (req, res) => {
+    const { commentId } = req.params;
+
+    try {
+      // Delete the comment
+      const deletedComment = await SuppliesModel.deleteComment(commentId);
+      if (!deletedComment) {
+        return res.status(404).json(formatErrorResponse('Comment not found'));
+      }
+
+      return res.status(200).json(formatSuccessResponse('Comment deleted successfully'));
+    } catch (error) {
+      return res.status(500).json(formatErrorResponse('Error deleting comment: ' + error.message));
+    }
+  },// Delete supply by supplyId
+  deleteSupply: async (supplyId) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // First, delete associated images
+      await client.query(`DELETE FROM supply_images WHERE supply_id = $1`, [supplyId]);
+
+      // Then, delete the supply itself
+      const result = await client.query(`DELETE FROM supplies WHERE id = $1 RETURNING *`, [supplyId]);
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error('Error deleting supply: ' + error.message);
+    } finally {
+      client.release();
+    }
+  },
+
+  // Delete comment by commentId
+  deleteComment: async (commentId) => {
+    const result = await pool.query(`DELETE FROM comments WHERE id = $1 RETURNING *`, [commentId]);
+    return result.rows[0];
+  },
 };
 
 module.exports = SuppliesModel;

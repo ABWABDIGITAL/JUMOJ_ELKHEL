@@ -43,6 +43,18 @@ router.post('/', authenticateToken, upload.array('images', 5), SupplyController.
 router.get('/:supplyId', SupplyController.getSupplyById);
 router.get('/', SupplyController.getAllSupplies);
 router.post('/:supplyId/comments',authenticateToken, SupplyController.createComment);
+// Update an existing supply
+router.put('/supplies/:supplyId', verifyToken, upload.array('images', 10), SupplyController.updateSupply);
+
+// Delete a supply
+router.delete('/supplies/:supplyId', verifyToken, SupplyController.deleteSupply);
+
+
+// Update a comment
+router.put('/comments/:commentId',  SupplyController.updateComment);
+
+// Delete a comment
+router.delete('/comments/:commentId',  SupplyController.deleteComment);
 
 
 module.exports = router;

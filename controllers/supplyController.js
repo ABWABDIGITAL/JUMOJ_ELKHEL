@@ -130,7 +130,63 @@ getAllSupplies: async (req, res) => {
     return res.status(500).json(formatErrorResponse('Error fetching supplies: ' + error.message));
   }
 }
+,
+// Update an existing supply
+updateSupply: async (req, res) => {
+  const { supplyId } = req.params;
+  const { name, description, locationId, advId } = req.body;
+  const images = req.files ? req.files.map(file => `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/supplies/${file.filename}`) : [];
 
+  try {
+    // Validate the input with Joi schema
+    const { error } = supplySchema.validate({ name, description, locationId, advId, images });
+    if (error) {
+      return res.status(400).json(formatErrorResponse(error.details[0].message));
+    }
+
+    // Update the supply in the database
+    const updatedSupply = await SuppliesModel.updateSupply(supplyId, {
+      name,
+      description,
+      locationId,
+      advId,
+      images
+    });
+
+    if (!updatedSupply) {
+      return res.status(404).json(formatErrorResponse('Supply not found'));
+    }
+
+    return res.status(200).json(formatSuccessResponse('Supply updated successfully', updatedSupply));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse('Error updating supply: ' + error.message));
+  }
+},
+
+// Update an existing comment
+updateComment: async (req, res) => {
+  const { commentId } = req.params;
+  const { name, comment } = req.body;
+
+  try {
+    // Validate the comment input
+    const { error } = commentSchema.validate({ name, comment });
+    if (error) {
+      return res.status(400).json(formatErrorResponse(error.details[0].message));
+    }
+
+    // Update the comment in the database
+    const updatedComment = await SuppliesModel.updateComment(commentId, { name, comment });
+
+    if (!updatedComment) {
+      return res.status(404).json(formatErrorResponse('Comment not found'));
+    }
+
+    return res.status(200).json(formatSuccessResponse('Comment updated successfully', updatedComment));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse('Error updating comment: ' + error.message));
+  }
+},
 };
 
 module.exports = SupplyController;

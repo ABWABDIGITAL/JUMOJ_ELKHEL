@@ -194,6 +194,7 @@ const SuppliesModel = {
         images: 'images'
       };
   
+      // Loop through updated fields and add only valid ones to the query
       for (const [field, value] of Object.entries(updatedFields)) {
         if (value !== undefined && fieldMapping[field]) {
           setValues.push(`${fieldMapping[field]} = $${paramIndex}`);
@@ -206,7 +207,8 @@ const SuppliesModel = {
         throw new Error("No valid fields provided for update");
       }
   
-      queryParams.push(supplyId); // Add supplyId as the last parameter
+      // Add supplyId as the last parameter to the query
+      queryParams.push(supplyId);
   
       const updateQuery = `UPDATE supplies SET ${setValues.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
   

@@ -226,13 +226,27 @@ const SuppliesModel = {
   
 
   // Update comment by commentId
-  updateComment: async (commentId, { name, comment }) => {
-    const result = await pool.query(
-      `UPDATE comments SET name = $1, comment = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
-      [name, comment, commentId]
-    );
+  updateComment: async (commentId, updatedFields) => {
+    const fields = [];
+    const values = [];
+    
+    Object.keys(updatedFields).forEach((key, index) => {
+      fields.push(`${key} = $${index + 1}`);
+      values.push(updatedFields[key]);
+    });
+  
+    const query = `
+      UPDATE comments
+      SET ${fields.join(', ')}
+      WHERE id = $${values.length + 1}
+      RETURNING *;
+    `;
+  
+    const result = await pool.query(query, [...values, commentId]);
+  
     return result.rows[0];
   },
+  
   updateSupply: async (supplyId, updatedFields) => {
     const client = await pool.connect();
   

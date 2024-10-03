@@ -20,6 +20,8 @@ const commentSchema = Joi.object({
   comment: Joi.string().allow(null, '').optional(),
 });
 
+
+
 const SupplyController = {
   // Create a new supply with multiple images
   createSupply: async (req, res) => {
@@ -167,19 +169,30 @@ updateSupply: async (req, res) => {
 
 
 // Update an existing comment
+
 updateComment: async (req, res) => {
   const { commentId } = req.params;
   const { name, comment } = req.body;
 
   try {
-    // Validate the comment input
+    // Validate input: only validate provided fields
     const { error } = commentSchema.validate({ name, comment });
     if (error) {
       return res.status(400).json(formatErrorResponse(error.details[0].message));
     }
 
+    // Create an object with only the fields to be updated
+    const updatedFields = {};
+    if (name) updatedFields.name = name;
+    if (comment) updatedFields.comment = comment;
+
+    // Ensure at least one field is being updated
+    if (Object.keys(updatedFields).length === 0) {
+      return res.status(400).json(formatErrorResponse('No fields provided to update'));
+    }
+
     // Update the comment in the database
-    const updatedComment = await SuppliesModel.updateComment(commentId, { name, comment });
+    const updatedComment = await SuppliesModel.updateComment(commentId, updatedFields);
 
     if (!updatedComment) {
       return res.status(404).json(formatErrorResponse('Comment not found'));
@@ -188,8 +201,7 @@ updateComment: async (req, res) => {
     return res.status(200).json(formatSuccessResponse('Comment updated successfully', updatedComment));
   } catch (error) {
     return res.status(500).json(formatErrorResponse('Error updating comment: ' + error.message));
-  }
-},
+}},
 // Delete supply by supplyId
   deleteSupply: async (req, res) => {
     const { supplyId } = req.params;

@@ -94,6 +94,7 @@ app.use("/api/faq", faqRoutes);
 app.use('/api/commission-payments', commissionPaymentRoutes);
 app.use('/api/my-payments', myPaymentRoutes);
 app.use("/chat", createChatRoutes(pool, io));
+app.use("/api",require("./routes/rateRoutes"));
 app.use("/",require("./routes/addPonitRoutes"));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

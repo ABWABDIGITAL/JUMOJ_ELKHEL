@@ -4,35 +4,53 @@ const bcrypt = require("bcryptjs");
 // Create a new user with hashed password
 
 const UserModel = {
- // Create a user with phone, key, pending status, and fixed OTP
-createUser: async (name, phone, email, key, password, confirmPassword, status) => {
-  // Log the values being passed
-  console.log({ name, phone, email, key, password, confirmPassword, status });
+  // Create a user with phone, key, pending status, and fixed OTP
+  createUser: async (
+    name,
+    phone,
+    email,
+    key,
+    password,
+    confirmPassword,
+    status
+  ) => {
+    // Log the values being passed
+    console.log({ name, phone, email, key, password, confirmPassword, status });
 
-  // Check for empty password and confirmPassword
-  if (!password || !confirmPassword) {
+    // Check for empty password and confirmPassword
+    if (!password || !confirmPassword) {
       throw new Error("Password or confirm password is undefined or empty");
-  }
+    }
 
-  // Check if password matches confirmPassword
-  if (password !== confirmPassword) {
+    // Check if password matches confirmPassword
+    if (password !== confirmPassword) {
       throw new Error("Passwords do not match");
-  }
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
 
-  // Generate a fixed OTP
-  const otp = '1234';
-  const otpExpiresInSeconds = Math.floor(Date.now() / 1000) + 3600; // OTP valid for 1 hour
+    // Generate a fixed OTP
+    const otp = "1234";
+    const otpExpiresInSeconds = Math.floor(Date.now() / 1000) + 3600; // OTP valid for 1 hour
 
-  // Insert user into the database
-  const result = await pool.query(
+    // Insert user into the database
+    const result = await pool.query(
       `INSERT INTO users (name, phone, email, key, password, otp, otp_expires,confirmPassword, status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9) RETURNING *`,
-      [name, phone, email, key, hashedPassword, otp, otpExpiresInSeconds,confirmPassword, status]
-  );
-  return result.rows[0];
-},
+      [
+        name,
+        phone,
+        email,
+        key,
+        hashedPassword,
+        otp,
+        otpExpiresInSeconds,
+        confirmPassword,
+        status,
+      ]
+    );
+    return result.rows[0];
+  },
 
   // Get a user by phone number
   getUserByPhone: async (phone) => {
@@ -114,34 +132,45 @@ createUser: async (name, phone, email, key, password, confirmPassword, status) =
   },
 
   // Get user by ID with location details and WhatsApp link
- // Get user by ID with location details and WhatsApp link
-getUserByIdWithDetails: async (userId) => {
-  const result = await pool.query(
-    `SELECT u.id, u.name, u.email, u.phone, u.location_id, u.identity, u.birthday, u.image_url, 
+  // Get user by ID with location details and WhatsApp link
+  getUserByIdWithDetails: async (userId) => {
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, u.phone, u.location_id, u.identity, u.birthday, u.image_url, 
             l.name as location_name, l.area, l.city
      FROM users u
      LEFT JOIN locations l ON u.location_id = l.id
      WHERE u.id = $1`,
-    [userId]
-  );
+      [userId]
+    );
 
-  const user = result.rows[0];
+    const user = result.rows[0];
 
-  if (user) {
-    // Add WhatsApp link based on phone number
-    user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, "")}`;
-  }
+    if (user) {
+      // Add WhatsApp link based on phone number
+      user.whatsapp_link = `https://wa.me/${user.phone.replace(/[^0-9]/g, "")}`;
+    }
 
-  return user;
-},
-
+    return user;
+  },
 
   // Update user contact information and locationId
-updateUser: async (userId, { name, email, phone, identity, birthday, locationId, password, imageUrl }) => {
-  console.log('Updating user with ID:', userId);
-  console.log('Incoming data:', { name, email, phone, identity, birthday, locationId, password, imageUrl });
+  updateUser: async (
+    userId,
+    { name, email, phone, identity, birthday, locationId, password, imageUrl }
+  ) => {
+    console.log("Updating user with ID:", userId);
+    console.log("Incoming data:", {
+      name,
+      email,
+      phone,
+      identity,
+      birthday,
+      locationId,
+      password,
+      imageUrl,
+    });
 
-  let query = `UPDATE users SET 
+    let query = `UPDATE users SET 
                 name = COALESCE($2, name), 
                 email = COALESCE($3, email), 
                 phone = COALESCE($4, phone), 
@@ -149,46 +178,46 @@ updateUser: async (userId, { name, email, phone, identity, birthday, locationId,
                 birthday = COALESCE($6, birthday),
                 location_id = COALESCE($7, location_id)`;
 
-  const values = [userId, name, email, phone, identity, birthday, locationId];
+    const values = [userId, name, email, phone, identity, birthday, locationId];
 
-  // Check if password is provided and hash it
-  if (password) {
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
-    query += `, password = $8`;
-    values.push(hashedPassword);
-  }
-
-  // Check if imageUrl is provided, and if so, add it to the query
-  if (imageUrl) {
-    query += `, image_url = $9`;
-    values.push(imageUrl);
-  }
-
-  query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id, image_url`;
-
-  try {
-    const result = await pool.query(query, values);
-    console.log('Query result:', result.rows);
-
-    if (result.rows.length > 0) {
-      // Return the updated user details
-      const updatedUser = await UserModel.getUserByIdWithDetails(userId);
-      return updatedUser;
+    // Check if password is provided and hash it
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password.trim(), 10);
+      query += `, password = $8`;
+      values.push(hashedPassword);
     }
 
-    return null; // No user found
-  } catch (error) {
-    console.error("Error in UserModel.updateUser:", error.message);
-    throw new Error("An error occurred while updating user information");
-  }
-},
+    // Check if imageUrl is provided, and if so, add it to the query
+    if (imageUrl) {
+      query += `, image_url = $9`;
+      values.push(imageUrl);
+    }
 
-searchByLocation: async (locationId, page, limit) => {
-  const offset = (page - 1) * limit;
+    query += ` WHERE id = $1 RETURNING id, name, email, phone, identity, birthday, location_id, image_url`;
 
-  try {
-    const result = await pool.query(
-      `SELECT 
+    try {
+      const result = await pool.query(query, values);
+      console.log("Query result:", result.rows);
+
+      if (result.rows.length > 0) {
+        // Return the updated user details
+        const updatedUser = await UserModel.getUserByIdWithDetails(userId);
+        return updatedUser;
+      }
+
+      return null; // No user found
+    } catch (error) {
+      console.error("Error in UserModel.updateUser:", error.message);
+      throw new Error("An error occurred while updating user information");
+    }
+  },
+
+  searchByLocation: async (locationId, page, limit) => {
+    const offset = (page - 1) * limit;
+
+    try {
+      const result = await pool.query(
+        `SELECT 
         u.id,
         u.name,
         u.email,
@@ -205,33 +234,52 @@ searchByLocation: async (locationId, page, limit) => {
         locations l ON u.location_id = l.id
       WHERE 
         l.id = $1
-      LIMIT $2 OFFSET $3`, 
-      [locationId, limit, offset]
-    );
+      LIMIT $2 OFFSET $3`,
+        [locationId, limit, offset]
+      );
 
-    return result.rows; // Return the array of users found
-  } catch (error) {
-    throw new Error(`Database query failed: ${error.message}`); // Handle any database errors
-  }
-},// Function to invalidate the access token
- invalidateAccessToken :async (token) => {
-    const query = 'INSERT INTO invalidated_tokens (token) VALUES ($1) ON CONFLICT (token) DO NOTHING'; // Insert token and ignore if it already exists
+      return result.rows; // Return the array of users found
+    } catch (error) {
+      throw new Error(`Database query failed: ${error.message}`); // Handle any database errors
+    }
+  }, // Function to invalidate the access token
+  invalidateAccessToken: async (token) => {
+    const query =
+      "INSERT INTO invalidated_tokens (token) VALUES ($1) ON CONFLICT (token) DO NOTHING"; // Insert token and ignore if it already exists
     const values = [token];
     await pool.query(query, values);
-},
+  },
 
-// Function to check if an access token is invalidated
- isTokenInvalidated : async (token) => {
-    const query = 'SELECT * FROM invalidated_tokens WHERE token = $1';
+  // Function to check if an access token is invalidated
+  isTokenInvalidated: async (token) => {
+    const query = "SELECT * FROM invalidated_tokens WHERE token = $1";
     const values = [token];
     const result = await pool.query(query, values);
-    return result.rowCount > 0; }// Return true if the token is found
+    return result.rowCount > 0;
+  }, // Return true if the token is found
+  // Function to add a rating for an advertisement
+ addRating : async (advertisementId, userId, rating) => {
+  const query = `
+    INSERT INTO advertisement_ratings (advertisement_id, user_id, rating)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (advertisement_id, user_id) DO UPDATE SET rating = EXCLUDED.rating
+    RETURNING *;
+  `;
+  const values = [advertisementId, userId, rating];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+},
+// Function to retrieve average rating for an advertisement
+ getAverageRating :async (advertisementId) => {
+  const query = `
+    SELECT AVG(rating) AS average_rating
+    FROM advertisement_ratings
+    WHERE advertisement_id = $1;
+  `;
+  const values = [advertisementId];
+  const result = await pool.query(query, values);
+  return result.rows[0].average_rating;
+},
 };
-
-
-
-
-  
-
 
 module.exports = UserModel;

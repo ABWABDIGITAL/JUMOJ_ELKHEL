@@ -138,6 +138,29 @@ getPromotionAdvertisements: async () => {
   );
   return result.rows;
 },
+// Function to add a rating for an advertisement
+addRating : async (advertisementId, userId, rating) => {
+  const query = `
+    INSERT INTO advertisement_ratings (advertisement_id, user_id, rating)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (advertisement_id, user_id) DO UPDATE SET rating = EXCLUDED.rating
+    RETURNING *;
+  `;
+  const values = [advertisementId, userId, rating];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+},
+// Function to retrieve average rating for an advertisement
+ getAverageRating :async (advertisementId) => {
+  const query = `
+    SELECT AVG(rating) AS average_rating
+    FROM advertisement_ratings
+    WHERE advertisement_id = $1;
+  `;
+  const values = [advertisementId];
+  const result = await pool.query(query, values);
+  return result.rows[0].average_rating;
+},
 
 };
 

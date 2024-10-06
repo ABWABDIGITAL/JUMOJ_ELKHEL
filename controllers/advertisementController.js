@@ -211,27 +211,30 @@ const AdvertisementController = {
     }
   },
   // Function to add a rating for an advertisement
-   rateAdvertisement : async (req, res) => {
-    const { advertisementId, rating } = req.body;
-    const userId = req.user.id; // Assuming the user is authenticated and you have the user info
+// Function to add a rating for an advertisement
+rateAdvertisement: async (req, res) => {
+  const { advertisementId, rating } = req.body;
+  const userId = req.user.id; // Assuming the user is authenticated and you have the user info
 
-    // Validate rating input (1 to 5)
-    if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json(formatErrorResponse("Rating must be between 1 and 5"));
-    }
+  // Validate rating input (1 to 5)
+  if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json(formatErrorResponse("Rating must be between 1 and 5"));
+  }
 
-    try {
-        // Add the rating to the database
-        const newRating = await advertisementModel.addRating(advertisementId, userId, rating);
-        
-        // Optionally, you can also fetch the new average rating after the update
-        const averageRating = await advertisementModel.getAverageRating(advertisementId);
-        
-        res.status(201).json(formatSuccessResponse({ newRating, averageRating }, "Rating submitted successfully"));
-    } catch (error) {
-        console.error("Error rating advertisement:", error.message);
-        res.status(500).json(formatErrorResponse("An internal error occurred"));
-    }}
+  try {
+      // Add the rating to the database
+      const newRating = await AdvertisementModel.addRating(advertisementId, userId, rating);
+      
+      // Optionally, you can also fetch the new average rating after the update
+      const averageRating = await AdvertisementModel.getAverageRating(advertisementId);
+      
+      res.status(201).json(formatSuccessResponse({ newRating, averageRating }, "Rating submitted successfully"));
+  } catch (error) {
+      console.error("Error rating advertisement:", error.message);
+      res.status(500).json(formatErrorResponse("An internal error occurred"));
+  }
+}
+
 };
 
 module.exports = AdvertisementController;

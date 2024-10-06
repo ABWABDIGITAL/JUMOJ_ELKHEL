@@ -214,7 +214,7 @@ const AdvertisementController = {
 // Function to add a rating for an advertisement
 rateAdvertisement: async (req, res) => {
   const { advertisementId, rating } = req.body;
-  const userId = req.user.id; // Assuming the user is authenticated and you have the user info
+  const userId = req.user.id; // Ensure userId is defined
 
   // Validate rating input (1 to 5)
   if (!rating || rating < 1 || rating > 5) {
@@ -234,6 +234,7 @@ rateAdvertisement: async (req, res) => {
       res.status(500).json(formatErrorResponse("An internal error occurred"));
   }
 }
+
 
 };
 

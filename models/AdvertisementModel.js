@@ -138,22 +138,29 @@ getPromotionAdvertisements: async () => {
   );
   return result.rows;
 },
-// Function to add a rating for an advertisement
- addRating : async (advertisementId, userId, rating) => {
+addRating: async (advertisementId, userId, rating) => {
   const query = `
       INSERT INTO advertisement_ratings (advertisement_id, user_id, rating)
       VALUES ($1, $2, $3)
       ON CONFLICT (advertisement_id, user_id) DO UPDATE SET rating = EXCLUDED.rating
       RETURNING *;
   `;
-  const values = [advertisementId, userId, rating];  // Ensure userId is passed correctly
+  const values = [advertisementId, userId, rating];  
   const result = await pool.query(query, values);
+
+  // Debug: Log the inserted rating
+  console.log("Inserted/Updated Rating:", result.rows[0]);
+
+  // Query to check if the rating was inserted correctly
+  const checkRatings = await pool.query(`SELECT * FROM advertisement_ratings WHERE advertisement_id = $1`, [advertisementId]);
+  console.log("Existing ratings for advertisement after insert:", checkRatings.rows);
+
   return result.rows[0];
 },
 
 
 // Function to retrieve average rating for an advertisement
- getAverageRating :async (advertisementId) => {
+getAverageRating: async (advertisementId) => {
   const query = `
     SELECT AVG(rating) AS average_rating
     FROM advertisement_ratings
@@ -161,8 +168,15 @@ getPromotionAdvertisements: async () => {
   `;
   const values = [advertisementId];
   const result = await pool.query(query, values);
-  return result.rows[0].average_rating;
-},
+
+  // Debugging: log the result of the query
+  console.log("Average rating result:", result.rows[0]);
+
+  // Return null if no ratings exist, otherwise return the average_rating rounded to two decimal places
+  return result.rows[0].average_rating ? parseFloat(result.rows[0].average_rating).toFixed(2) : null;
+}
+
+
 
 };
 

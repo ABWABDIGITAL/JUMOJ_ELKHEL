@@ -211,33 +211,65 @@ const AdvertisementController = {
     }
   },
   // Function to add a rating for an advertisement
-// Function to add a rating for an advertisement
-rateAdvertisement: async (req, res) => {
-  const { advertisementId, rating } = req.body;
-  const userId = req.user?.userId;  // Corrected from req.user.id to req.user.userId
-
-  // Log user information for debugging
-  console.log("User Info:", req.user);
-
-  // Validate input
-  if (!userId) {
-      return res.status(400).json({ error: "User ID is missing" });
-  }
-
-  if (!rating || rating < 1 || rating > 5) {
+  rateAdvertisement: async (req, res) => {
+    const { advertisementId, rating } = req.body;
+    const userId = req.user?.userId;
+  
+    // Log user information for debugging
+    console.log("User Info:", req.user);
+  
+    // Validate input
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is missing" });
+    }
+    
+    // Validate rating (ensure it's between 1 and 5)
+    if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating must be between 1 and 5" });
-  }
-
-  try {
-      // Insert rating into the database
-      const newRating = await AdvertisementModel.addRating(advertisementId, userId, rating);
+    }
+  
+    // Log the userId and advertisementId for debugging
+    console.log(`Adding rating for advertisementId: ${advertisementId}, userId: ${userId}, rating: ${rating}`);
+  
+    try {
+        // Insert rating into the database
+        const newRating = await AdvertisementModel.addRating(advertisementId, userId, rating);
+        const averageRating = await AdvertisementModel.getAverageRating(advertisementId);
+        return res.status(201).json({ success: true, newRating, averageRating });
+    } catch (error) {
+        console.error("Error rating advertisement:", error.message);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+  
+  // Controller method to get the average rating of an advertisement
+  getRateAdvertisement: async (req, res) => {
+    const { advertisementId } = req.params;
+  
+    try {
       const averageRating = await AdvertisementModel.getAverageRating(advertisementId);
-      return res.status(201).json({ newRating, averageRating });
-  } catch (error) {
-      console.error("Error rating advertisement:", error.message);
-      return res.status(500).json({ error: "Internal server error" });
+  
+      // Return a message if no ratings are found
+      if (averageRating === null) {
+        return res.status(200).json({
+          success: true,
+          message: "No ratings found for this advertisement",
+          data: { averageRating: 0 }
+        });
+      }
+  
+      // Return the average rating
+      return res.status(200).json({
+        success: true,
+        message: "Average rating retrieved successfully",
+        data: { averageRating }
+      });
+    } catch (error) {
+      console.error("Error getting advertisement rating:", error.message);
+      return res.status(500).json({ error: "Error getting advertisement rating" });
+    }
   }
-}
+  
 
 
 

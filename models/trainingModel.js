@@ -54,31 +54,24 @@ const TrainingModel = {
   },
 
   // Get all trainings with HTML response
-  getAllTrainingsWithPagination: async (page = 1, limit = 10) => {
-    const offset = (page - 1) * limit;
+  // Function to get the total number of trainings
+  getTotalTrainingsCount: async () => {
+    const result = await pool.query('SELECT COUNT(*) FROM trainings');
+    return parseInt(result.rows[0].count, 10); // Return the total count as an integer
+  },
 
-    // Query to get the paginated trainings
+  // Function to get trainings with pagination
+  getAllTrainingsWithPagination: async (page, limit) => {
+    const offset = (page - 1) * limit; // Calculate the offset for the current page
+
     const result = await pool.query(
       `SELECT id, title, description, price, period, age, training_for, training_type, image_url
        FROM trainings
-       ORDER BY id
-       LIMIT $1 OFFSET $2`,
+       LIMIT $1 OFFSET $2`, 
       [limit, offset]
     );
 
-    // Query to get the total count of trainings
-    const totalResult = await pool.query(`SELECT COUNT(*) FROM trainings`);
-    const totalItems = parseInt(totalResult.rows[0].count);
-
-    // Return the data and pagination info
-    return {
-      trainings: result.rows,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalItems / limit),
-        totalItems,
-      },
-    };
+    return result.rows; // Return the list of trainings for the current page
   },
   // Update training with HTML response
   updateTraining: async (trainingId, { title, description, price, period, age, trainingFor, training_type, image }) => {

@@ -211,6 +211,21 @@ const UserModel = {
       throw new Error("An error occurred while updating user information");
     }
   },
+  // Fetch user profile by ID
+  getProfileById: async (userId) => {
+    const query = `
+      SELECT id, name, email, phone, birthday, image_url, status, location_id
+      FROM users
+      WHERE id = $1
+    `;
+    const result = await pool.query(query, [userId]);
+
+    if (result.rows.length === 0) {
+      throw new Error("User not found");
+    }
+
+    return result.rows[0]; // Return user profile data
+  },
 
   searchByLocation: async (locationId, page, limit) => {
     const offset = (page - 1) * limit;
@@ -257,7 +272,6 @@ const UserModel = {
     const result = await pool.query(query, values);
     return result.rowCount > 0;
   }, // Return true if the token is found
-  
 };
 
 module.exports = UserModel;

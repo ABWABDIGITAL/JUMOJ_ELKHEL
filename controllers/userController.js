@@ -19,7 +19,9 @@ const UserController = {
 
     // Validate required fields
     if (!name || !key || !email || !phone || !password || !confirmPassword) {
-        return res.status(400).json(formatErrorResponse("All fields are required"));
+      return res
+        .status(400)
+        .json(formatErrorResponse("All fields are required"));
     }
 
     // Log the received parameters for debugging
@@ -27,26 +29,43 @@ const UserController = {
 
     // Check if password matches confirmPassword
     if (password !== confirmPassword) {
-        return res.status(400).json(formatErrorResponse("Passwords do not match"));
+      return res
+        .status(400)
+        .json(formatErrorResponse("Passwords do not match"));
     }
 
     try {
-        const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
-        if (existingUser) {
-            return res.status(409).json(formatErrorResponse("Phone number is already in use"));
-        }
+      const existingUser = await UserModel.getUserByPhoneAndKey(phone, key);
+      if (existingUser) {
+        return res
+          .status(409)
+          .json(formatErrorResponse("Phone number is already in use"));
+      }
 
-        // Pass 'pending' status and confirmPassword to UserModel.createUser method
-        const user = await UserModel.createUser(name, phone, email, key, password, confirmPassword, "pending");
+      // Pass 'pending' status and confirmPassword to UserModel.createUser method
+      const user = await UserModel.createUser(
+        name,
+        phone,
+        email,
+        key,
+        password,
+        confirmPassword,
+        "pending"
+      );
 
-        res.status(201).json(formatSuccessResponse(null, "User created successfully. Please verify your phone number using the OTP sent."));
+      res
+        .status(201)
+        .json(
+          formatSuccessResponse(
+            null,
+            "User created successfully. Please verify your phone number using the OTP sent."
+          )
+        );
     } catch (error) {
-        console.error("Error creating user:", error.message);
-        res.status(500).json(formatErrorResponse("An internal error occurred"));
+      console.error("Error creating user:", error.message);
+      res.status(500).json(formatErrorResponse("An internal error occurred"));
     }
-}
-,
-
+  },
   verifyOtp: async (req, res) => {
     const { phone, key, otp } = req.body;
 
@@ -117,24 +136,32 @@ const UserController = {
 
   loginUser: async (req, res) => {
     const { phone, key, password } = req.body;
-  
+
     // Validate input
     if (!phone || !key || !password) {
       return res
         .status(400)
-        .json(formatErrorResponse("Phone number, key (country code), and password are required"));
+        .json(
+          formatErrorResponse(
+            "Phone number, key (country code), and password are required"
+          )
+        );
     }
-  
+
     try {
       // Fetch the user using both phone and key
       const user = await UserModel.getUserByPhoneAndKey(phone, key);
-  
+
       // Check if the user exists and validate the password
-      if (user && user.password && (await bcrypt.compare(password, user.password))) {
+      if (
+        user &&
+        user.password &&
+        (await bcrypt.compare(password, user.password))
+      ) {
         // Generate tokens if login is successful
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
-        
+
         return res
           .status(200)
           .json(
@@ -153,45 +180,58 @@ const UserController = {
       Sentry.captureException(error); // Capture error with Sentry
       return res.status(500).json(formatErrorResponse(error.message));
     }
-  }
-,  
+  },
+  resetPassword: async (req, res) => {
+    const { password, confirmPassword, userId } = req.body;
 
-resetPassword: async (req, res) => {
-  const { password, confirmPassword, userId } = req.body;
+    // Validate password fields
+    if (!password || !confirmPassword) {
+      return res
+        .status(400)
+        .json(
+          formatErrorResponse("Password and confirm password are required")
+        );
+    }
 
-  // Validate password fields
-  if (!password || !confirmPassword) {
-      return res.status(400).json(formatErrorResponse("Password and confirm password are required"));
-  }
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json(formatErrorResponse("Passwords do not match"));
+    }
 
-  // Check if passwords match
-  if (password !== confirmPassword) {
-      return res.status(400).json(formatErrorResponse("Passwords do not match"));
-  }
-
-  try {
+    try {
       // Check if userId is provided (this should come from a verified OTP)
       if (!userId) {
-          return res.status(400).json(formatErrorResponse("User ID is required to reset the password"));
+        return res
+          .status(400)
+          .json(
+            formatErrorResponse("User ID is required to reset the password")
+          );
       }
 
       // Fetch the user by ID
       const user = await UserModel.getUserById(userId);
       if (!user) {
-          return res.status(404).json(formatErrorResponse("User not found"));
+        return res.status(404).json(formatErrorResponse("User not found"));
       }
 
       // Reset the password (ensure it's hashed)
       await UserModel.resetPassword(user.id, password);
 
-      return res.status(200).json(formatSuccessResponse(null, "Password reset successfully"));
-  } catch (error) {
+      return res
+        .status(200)
+        .json(formatSuccessResponse(null, "Password reset successfully"));
+    } catch (error) {
       console.error("Error resetting password:", error.message);
       Sentry.captureException(error); // Capture error with Sentry
-      return res.status(500).json(formatErrorResponse("An error occurred while resetting the password"));
-  }
-},
-
+      return res
+        .status(500)
+        .json(
+          formatErrorResponse("An error occurred while resetting the password")
+        );
+    }
+  },
 
   forgotPassword: async (req, res) => {
     const { phone, key } = req.body;
@@ -279,38 +319,45 @@ resetPassword: async (req, res) => {
 
     // Validate input fields
     if (!phone || !key || !otp) {
-        return res.status(400).json(formatErrorResponse("Phone, country code, and OTP are required"));
+      return res
+        .status(400)
+        .json(formatErrorResponse("Phone, country code, and OTP are required"));
     }
 
     try {
-        // Fetch the user by phone number and country key
-        const user = await UserModel.getUserByPhoneAndKey(phone, key);
+      // Fetch the user by phone number and country key
+      const user = await UserModel.getUserByPhoneAndKey(phone, key);
 
-        if (!user) {
-            return res.status(404).json(formatErrorResponse("User not found"));
-        }
+      if (!user) {
+        return res.status(404).json(formatErrorResponse("User not found"));
+      }
 
-        // Check if OTP has expired
-        const nowInSeconds = Math.floor(Date.now() / 1000);
-        if (nowInSeconds > user.otpExpiresInSeconds) {
-            return res.status(400).json(formatErrorResponse("OTP has expired"));
-        }
+      // Check if OTP has expired
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      if (nowInSeconds > user.otpExpiresInSeconds) {
+        return res.status(400).json(formatErrorResponse("OTP has expired"));
+      }
 
-        // Check if the OTP matches
-        if (otp !== user.otp) {
-            return res.status(400).json(formatErrorResponse("Invalid OTP"));
-        }
+      // Check if the OTP matches
+      if (otp !== user.otp) {
+        return res.status(400).json(formatErrorResponse("Invalid OTP"));
+      }
 
-        // OTP is valid, allow the user to reset the password (pass user ID to the next step)
-        return res.status(200).json(
-            formatSuccessResponse({ userId: user.id }, "OTP verified successfully. You can now reset your password.")
+      // OTP is valid, allow the user to reset the password (pass user ID to the next step)
+      return res
+        .status(200)
+        .json(
+          formatSuccessResponse(
+            { userId: user.id },
+            "OTP verified successfully. You can now reset your password."
+          )
         );
     } catch (error) {
-        console.error("Error verifying OTP:", error.message);
-        Sentry.captureException(error);
-        return res.status(500).json(formatErrorResponse(error.message));
+      console.error("Error verifying OTP:", error.message);
+      Sentry.captureException(error);
+      return res.status(500).json(formatErrorResponse(error.message));
     }
-},
+  },
 
   createCustomToken: (req, res) => {
     const { userId } = req.body;
@@ -381,62 +428,101 @@ resetPassword: async (req, res) => {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
-  
 
+  getProfile: async (req, res) => {
+    try {
+      const accessToken = req.headers.authorization?.split(" ")[1];
 
-// Update user profile
-updateUser: async (req, res) => {
-  const { userId } = req.params;
-  const { name, email, phone, identity, birthday, locationId, password } = req.body;
+      if (!accessToken) {
+        return res
+          .status(401)
+          .json(formatErrorResponse("Access token is required"));
+      }
 
-  try {
-    if (!userId) {
-      return res.status(400).json(formatErrorResponse("User ID is required"));
+      // Decode the token and extract userId
+      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+      const userId = decoded.userId; // Assuming the token has 'userId'
+
+      // Get user profile by userId
+      const userProfile = await UserModel.getProfileById(userId);
+
+      // Send back the user profile
+      res
+        .status(200)
+        .json(
+          formatSuccessResponse(userProfile, "Profile fetched successfully")
+        );
+    } catch (error) {
+      res.status(400).json(formatErrorResponse(error.message));
+    }
+  },
+  // Update user profile
+  updateUser: async (req, res) => {
+    const { userId } = req.params;
+    const { name, email, phone, identity, birthday, locationId, password } =
+      req.body;
+
+    try {
+      if (!userId) {
+        return res.status(400).json(formatErrorResponse("User ID is required"));
+      }
+
+      // Get the uploaded image URL
+      let imageUrl;
+      if (req.file) {
+        imageUrl = `http://91.108.102.81:9098/${req.file.path.replace(
+          /\\/g,
+          "/"
+        )}`; // Convert Windows-style backslashes to forward slashes
+      }
+
+      // Call updateUser with the image URL
+      const updatedUser = await UserModel.updateUser(userId, {
+        name,
+        email,
+        phone,
+        identity,
+        birthday,
+        locationId,
+        password,
+        imageUrl,
+      });
+
+      if (updatedUser) {
+        res
+          .status(200)
+          .json(
+            formatSuccessResponse(updatedUser, "User updated successfully")
+          );
+      } else {
+        res.status(404).json(formatErrorResponse("User not found"));
+      }
+    } catch (error) {
+      res.status(500).json(formatErrorResponse(error.message));
+    }
+  },
+  logoutUser: async (req, res) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    if (!accessToken) {
+      return res
+        .status(401)
+        .json(formatErrorResponse("Access token is required"));
     }
 
-    // Get the uploaded image URL
-    let imageUrl;
-    if (req.file) {
-      imageUrl = `http://91.108.102.81:9098/${req.file.path.replace(/\\/g, '/')}`; // Convert Windows-style backslashes to forward slashes
-    }
-
-    // Call updateUser with the image URL
-    const updatedUser = await UserModel.updateUser(userId, {
-      name,
-      email,
-      phone,
-      identity,
-      birthday,
-      locationId,
-      password,
-      imageUrl,
-    });
-
-    if (updatedUser) {
-      res.status(200).json(formatSuccessResponse(updatedUser, "User updated successfully"));
-    } else {
-      res.status(404).json(formatErrorResponse("User not found"));
-    }
-  } catch (error) {
-    res.status(500).json(formatErrorResponse(error.message));
-  }
-},
- logoutUser : async (req, res) => {
-  const accessToken = req.headers.authorization?.split(" ")[1];
-  if (!accessToken) {
-      return res.status(401).json(formatErrorResponse("Access token is required"));
-  }
-
-  try {
+    try {
       // Invalidate the access token
       await UserModel.invalidateAccessToken(accessToken);
 
-      return res.status(200).json(formatSuccessResponse(null, "Logged out successfully"));
-  } catch (error) {
+      return res
+        .status(200)
+        .json(formatSuccessResponse(null, "Logged out successfully"));
+    } catch (error) {
       console.error("Error logging out:", error.message);
-      return res.status(500).json(formatErrorResponse("An internal error occurred"));
-  }},
-
+      return res
+        .status(500)
+        .json(formatErrorResponse("An internal error occurred"));
+    }
+  },
 };
 
 module.exports = UserController;

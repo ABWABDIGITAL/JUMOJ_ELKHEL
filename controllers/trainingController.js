@@ -156,6 +156,7 @@ const TrainingController = {
     }
 }
 ,
+
 // Update training by ID
 updateTraining: async (req, res) => {
   const { trainingId } = req.params;

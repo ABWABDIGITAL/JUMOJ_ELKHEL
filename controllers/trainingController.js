@@ -114,7 +114,7 @@ const TrainingController = {
         data: response,
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: "Error retrieving trainings", error: error.message });
+      res.status(500).json({ success: false, message: "Error retrieving trainings", error: error.message });}
     }
  ,
 // Update training by ID

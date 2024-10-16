@@ -65,7 +65,35 @@ const StoreController = {
       res.status(500).json(formatErrorResponse(error.message));
     }
   },
+// Inside storeController.js
 
+ getAllStoresWithPagination : async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+
+  const pageInt = parseInt(page, 10);
+  const limitInt = parseInt(limit, 10);
+  const offset = (pageInt - 1) * limitInt; // Calculate the offset for pagination
+
+  try {
+    // Fetch paginated stores
+    const stores = await StoreModel.getAllStoresWithPagination(limitInt, offset);
+    const total = await StoreModel.getTotalStoresCount(); // Get total number of stores
+
+    const totalPages = Math.ceil(total / limitInt); // Calculate total number of pages
+
+    const response = {
+      total,
+      totalPages,
+      currentPage: pageInt,
+      limit: limitInt,
+      stores,
+    };
+
+    res.status(200).json(formatSuccessResponse(response, "Stores retrieved successfully"));
+  } catch (error) {
+    res.status(500).json(formatErrorResponse("Error retrieving stores", error.message));
+  }
+},
   // Get store by ID
   getStoreById: async (req, res) => {
     const { id } = req.params;

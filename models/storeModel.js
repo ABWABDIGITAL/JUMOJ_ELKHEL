@@ -109,6 +109,24 @@ const StoreModel = {
     client.release();
   }
 },
+// Get all stores with pagination
+getAllStoresWithPagination: async (limit, offset) => {
+  const query = `
+    SELECT * FROM stores
+    LIMIT $1 OFFSET $2
+  `;
+  const result = await pool.query(query, [limit, offset]);
+  return result.rows; // Return the array of stores
+},
+
+// Optionally, add a function to count total stores for pagination purposes
+getTotalStoresCount: async () => {
+  const query = `
+    SELECT COUNT(*) AS total FROM stores
+  `;
+  const result = await pool.query(query);
+  return parseInt(result.rows[0].total, 10); // Return the total count
+},
 
 // Delete store by ID
 deleteStoreById: async (id) => {

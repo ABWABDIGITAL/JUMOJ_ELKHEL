@@ -86,21 +86,37 @@ const TrainingController = {
   },
 
   // Get all trainings
-  getAllTrainings: async (req, res) => {
+ getAllTrainings: async (req, res) => {
+    const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+  
+    const pageInt = parseInt(page, 10);
+    const limitInt = parseInt(limit, 10);
+    const offset = (pageInt - 1) * limitInt; // Calculate the offset for pagination
+  
     try {
-      const trainings = await TrainingModel.getAllTrainings();
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Trainings retrieved successfully",
-          data: trainings,
-        });
+      // Fetch paginated trainings
+      const trainings = await TrainingModel.getAllTrainingsWithPagination(limitInt, offset);
+      const total = await TrainingModel.getTotalTrainingsCount(); // Get total number of trainings
+  
+      const totalPages = Math.ceil(total / limitInt); // Calculate total number of pages
+  
+      const response = {
+        total,
+        totalPages,
+        currentPage: pageInt,
+        limit: limitInt,
+        trainings,
+      };
+  
+      res.status(200).json({
+        success: true,
+        message: "Trainings retrieved successfully",
+        data: response,
+      });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, message: "Error retrieving trainings", error: error.message });
     }
-  },
- 
+ ,
 // Update training by ID
 updateTraining: async (req, res) => {
   const { trainingId } = req.params;

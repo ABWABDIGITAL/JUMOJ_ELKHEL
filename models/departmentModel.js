@@ -32,7 +32,16 @@ const DepartmentModel = {
     );
     return result.rows[0];
   },
-
+// Function to get advertisements by department ID
+getAdsByDepartmentId: async (departmentId) => {
+  const query = `
+    SELECT * 
+    FROM advertisements 
+    WHERE department_id = $1
+  `;
+  const result = await pool.query(query, [departmentId]);
+  return result.rows; // Return the array of advertisements
+},
   // Delete department by ID
   deleteDepartment: async (id) => {
     const result = await pool.query(

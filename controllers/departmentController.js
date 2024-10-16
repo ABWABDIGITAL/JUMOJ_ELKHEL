@@ -76,11 +76,25 @@ const deleteDepartment = async (req, res) => {
     res.status(500).json(formatErrorResponse("Failed to delete department"));
   }
 };
-
+// Get advertisements by department ID
+const getAdsByDepartmentId = async (req, res) => {
+  const { id } = req.params; // Get department ID from the request parameters
+  try {
+    const ads = await DepartmentModel.getAdsByDepartmentId(id); // Fetch advertisements
+    if (ads.length > 0) {
+      res.status(200).json(formatSuccessResponse(ads, "Advertisements fetched successfully"));
+    } else {
+      res.status(404).json(formatErrorResponse("No advertisements found for this department"));
+    }
+  } catch (error) {
+    console.error("Error fetching advertisements:", error);
+    res.status(500).json(formatErrorResponse("Failed to fetch advertisements"));}
+  };
 module.exports = {
   createDepartment,
   getDepartmentById,
   getAllDepartments,
   updateDepartment,
   deleteDepartment,
+  getAdsByDepartmentId
 };

@@ -54,30 +54,31 @@ const TrainingModel = {
   },
 
   // Get all trainings with HTML response
-  getAllTrainings: async (req, res) => {
-    try {
-      const result = await pool.query(
-        `SELECT id, title, description, price, period, age, training_for, training_type, image_url
-         FROM trainings`
-      );
-  
-      const trainingsHtml = result.rows.map(training =>
-        `<div>
-           <h2>${training.title}</h2>
-           <p><strong>Description:</strong> ${training.description}</p>
-           <p><strong>Price:</strong> ${training.price}</p>
-           <p><strong>Period:</strong> ${training.period}</p>
-           <p><strong>Age Group:</strong> ${training.age}</p>
-           <p><strong>Training For:</strong> ${training.training_for}</p>
-           <p><strong>Training Type:</strong> ${training.training_type}</p>
-           <img src="${training.image_url}" alt="${training.title}" />
-         </div>`
-      ).join('');
-  
-      res.status(200).send(trainingsHtml); // Send the generated HTML as the response
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+  getAllTrainingsWithPagination: async (page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
+
+    // Query to get the paginated trainings
+    const result = await pool.query(
+      `SELECT id, title, description, price, period, age, training_for, training_type, image_url
+       FROM trainings
+       ORDER BY id
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    // Query to get the total count of trainings
+    const totalResult = await pool.query(`SELECT COUNT(*) FROM trainings`);
+    const totalItems = parseInt(totalResult.rows[0].count);
+
+    // Return the data and pagination info
+    return {
+      trainings: result.rows,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+      },
+    };
   },
   // Update training with HTML response
   updateTraining: async (trainingId, { title, description, price, period, age, trainingFor, training_type, image }) => {

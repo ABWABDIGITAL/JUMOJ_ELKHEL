@@ -41,6 +41,9 @@ router.get("/:id", departmentController.getDepartmentById);
 
 // Update department by ID with image upload
 router.put("/:id", uploadSingleImage("image"), departmentController.updateDepartment);
+// Route to get advertisements by department ID
+router.get("/:id/ads", departmentController.getAdsByDepartmentId);
+
 
 // Delete department by ID
 router.delete("/:id", departmentController.deleteDepartment);

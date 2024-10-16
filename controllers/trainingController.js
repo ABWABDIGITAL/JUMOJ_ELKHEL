@@ -106,24 +106,7 @@ const TrainingController = {
             hasPreviousPage: page > 1,
         };
 
-        // Generate HTML content for trainings
-        let htmlContent = `<h1>Trainings List</h1>`;
-        trainings.forEach((training) => {
-            htmlContent += `
-              <div>
-                <h2>${training.title}</h2>
-                <p><strong>Description:</strong> ${training.description}</p>
-                <p><strong>Price:</strong> ${training.price}</p>
-                <p><strong>Period:</strong> ${training.period}</p>
-                <p><strong>Age Group:</strong> ${training.age}</p>
-                <p><strong>Training For:</strong> ${training.training_for}</p>
-                <p><strong>Training Type:</strong> ${training.training_type}</p>
-                <img src="${training.image_url}" alt="${training.title}" style="width:200px;height:auto;" />
-              </div>
-              <hr />
-            `;
-        });
-
+       
         // Add pagination controls at the bottom
         htmlContent += `
           <div>

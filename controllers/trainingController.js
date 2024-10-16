@@ -85,61 +85,38 @@ const TrainingController = {
     }
   },
 
-  getAllTrainings: async (req, res) => {
-    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
-
+  // Get all trainings
+ getAllTrainings: async (req, res) => {
+    const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+  
+    const pageInt = parseInt(page, 10);
+    const limitInt = parseInt(limit, 10);
+    const offset = (pageInt - 1) * limitInt; // Calculate the offset for pagination
+  
     try {
-        // Get the total number of trainings
-        const totalTrainings = await TrainingModel.getTotalTrainingsCount(); // Ensure this method is defined
-
-        // Get the trainings for the current page
-        const trainings = await TrainingModel.getAllTrainingsWithPagination(page, limit); // Ensure this method is defined
-
-        // Calculate pagination details
-        const totalPages = Math.ceil(totalTrainings / limit);
-        const pagination = {
-            currentPage: page,
-            totalPages,
-            totalItems: totalTrainings,
-            hasNextPage: page < totalPages,
-            hasPreviousPage: page > 1,
-        };
-
-       
-        // Add pagination controls at the bottom
-        htmlContent += `
-          <div>
-            <p>Page ${pagination.currentPage} of ${pagination.totalPages}</p>
-            ${pagination.hasPreviousPage ? `<a href="?page=${pagination.currentPage - 1}&limit=${limit}">Previous</a>` : ""}
-            ${pagination.hasNextPage ? `<a href="?page=${pagination.currentPage + 1}&limit=${limit}">Next</a>` : ""}
-          </div>
-        `;
-
-        // Send the HTML as the response
-        res.status(200).send(`
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Trainings</title>
-          </head>
-          <body>
-            ${htmlContent}
-          </body>
-          </html>
-        `);
+      // Fetch paginated trainings
+      const trainings = await TrainingModel.getAllTrainingsWithPagination(limitInt, offset);
+      const total = await TrainingModel.getTotalTrainingsCount(); // Get total number of trainings
+  
+      const totalPages = Math.ceil(total / limitInt); // Calculate total number of pages
+  
+      const response = {
+        total,
+        totalPages,
+        currentPage: pageInt,
+        limit: limitInt,
+        trainings,
+      };
+  
+      res.status(200).json({
+        success: true,
+        message: "Trainings retrieved successfully",
+        data: response,
+      });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error retrieving trainings",
-            error: error.message,
-        });
+      res.status(500).json({ success: false, message: "Error retrieving trainings", error: error.message });}
     }
-}
-,
-
+ ,
 // Update training by ID
 updateTraining: async (req, res) => {
   const { trainingId } = req.params;

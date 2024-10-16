@@ -54,6 +54,23 @@ const AdvertisementModel = {
     );
     return result.rows[0];
   },
+  getAllAdvertisementsWithPagination: async (limit, offset) => {
+    const query = `
+      SELECT * FROM advertisements
+      LIMIT $1 OFFSET $2
+    `;
+    const result = await pool.query(query, [limit, offset]);
+    return result.rows; // Return the array of advertisements
+  },
+
+  // Optionally, add a function to count total advertisements
+  getTotalAdvertisementsCount: async () => {
+    const query = `
+      SELECT COUNT(*) AS total FROM advertisements
+    `;
+    const result = await pool.query(query);
+    return parseInt(result.rows[0].total, 10); // Return the total count
+  },
 
   updateAdvertisement: async (id, fieldsToUpdate) => {
     const setClauses = [];

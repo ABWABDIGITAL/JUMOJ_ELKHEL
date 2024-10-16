@@ -173,16 +173,33 @@ const AdvertisementController = {
   },
 
   // Get all advertisements
-  getAllAdvertisements: async (req, res) => {
+  getAllAdvertisements : async (req, res) => {
+    const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+  
+    const pageInt = parseInt(page, 10);
+    const limitInt = parseInt(limit, 10);
+    const offset = (pageInt - 1) * limitInt; // Calculate the offset
+  
     try {
-      const ads = await AdvertisementModel.getAllAdvertisements();
-      return res.status(200).json(formatSuccessResponse(ads));
+      // Fetch paginated advertisements
+      const ads = await AdvertisementModel.getAllAdvertisementsWithPagination(limitInt, offset);
+      const total = await AdvertisementModel.getTotalAdvertisementsCount(); // Get total number of advertisements
+  
+      const totalPages = Math.ceil(total / limitInt); // Calculate total pages
+  
+      const response = {
+        total,
+        totalPages,
+        currentPage: pageInt,
+        limit: limitInt,
+        advertisements: ads,
+      };
+  
+      return res.status(200).json(formatSuccessResponse(response, "Advertisements fetched successfully"));
     } catch (error) {
       return res
         .status(500)
-        .json(
-          formatErrorResponse("Error retrieving advertisements", error.message)
-        );
+        .json(formatErrorResponse("Error retrieving advertisements", error.message));
     }
   },
 

@@ -8,11 +8,13 @@ const Backend = require("i18next-fs-backend");
 const notificationRoutes = require("./routes/notificationRoutes");
 const path = require("path");
 const http = require("http");
+
 const { Server } = require("socket.io");
+
 const pool = require("./config/db");
-const faqRoutes = require('./routes/faqRoutes');  
-const commissionPaymentRoutes = require('./routes/commissionPaymentRoutes');
-const myPaymentRoutes = require('./routes/myPaymentRoutes');
+const faqRoutes = require("./routes/faqRoutes");
+const commissionPaymentRoutes = require("./routes/commissionPaymentRoutes");
+const myPaymentRoutes = require("./routes/myPaymentRoutes");
 const createChatRoutes = require("./routes/chatRoutes");
 
 Sentry.init({
@@ -41,11 +43,12 @@ i18next
 app.use(i18nextMiddleware.handle(i18next));
 
 // Enable CORS for all routes
-app.use(cors({
-  origin: '*', // Replace with your allowed origins
-  methods: ["GET", "POST"], // Specify methods
-}));
-
+app.use(
+  cors({
+    origin: "*", // Replace with your allowed origins
+    methods: ["GET", "POST"], // Specify methods
+  })
+);
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -57,7 +60,7 @@ const connectedUsers = {};
 const setupSocketIo = (io) => {
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId; // Get user ID from query params
-  
+
     // Add user to the connected users map
     if (userId) {
       connectedUsers[userId] = socket.id;
@@ -65,15 +68,14 @@ const setupSocketIo = (io) => {
     } else {
       console.error("User ID not provided in connection request");
     }
-  
+
     // Handle disconnect event
     socket.on("disconnect", () => {
       console.log(`User ${userId} disconnected`);
       delete connectedUsers[userId];
     });
   });
-
-}
+};
 
 // Call the setup function
 setupSocketIo(io);
@@ -91,12 +93,12 @@ app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("", require("./routes/searchByLocationRoutes"));
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/faq", faqRoutes);
-app.use('/api/commission-payments', commissionPaymentRoutes);
-app.use('/api/my-payments', myPaymentRoutes);
+app.use("/api/commission-payments", commissionPaymentRoutes);
+app.use("/api/my-payments", myPaymentRoutes);
 app.use("/chat", createChatRoutes(pool, io));
-app.use("/api",require("./routes/rateRoutes"));
-app.use("/",require("./routes/addPonitRoutes"));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/api", require("./routes/rateRoutes"));
+app.use("/", require("./routes/addPonitRoutes"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(express.static(path.join(__dirname, "public")));
 

@@ -156,48 +156,42 @@ const UserController = {
   }
 ,  
 
-  resetPassword: async (req, res) => {
-    const { password, confirmPassword } = req.body;
+resetPassword: async (req, res) => {
+  const { password, confirmPassword, userId } = req.body;
 
-    if (!password || !confirmPassword) {
-      return res
-        .status(400)
-        .json(
-          formatErrorResponse("Password and confirm password are required")
-        );
-    }
+  // Validate password fields
+  if (!password || !confirmPassword) {
+      return res.status(400).json(formatErrorResponse("Password and confirm password are required"));
+  }
 
-    if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json(formatErrorResponse("Passwords do not match"));
-    }
+  // Check if passwords match
+  if (password !== confirmPassword) {
+      return res.status(400).json(formatErrorResponse("Passwords do not match"));
+  }
 
-    try {
-      const accessToken = req.headers.authorization?.split(" ")[1];
-      if (!accessToken) {
-        return res
-          .status(400)
-          .json(formatErrorResponse("Access token is required"));
+  try {
+      // Check if userId is provided (this should come from a verified OTP)
+      if (!userId) {
+          return res.status(400).json(formatErrorResponse("User ID is required to reset the password"));
       }
 
-      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-      const user = await UserModel.getUserById(decoded.userId);
+      // Fetch the user by ID
+      const user = await UserModel.getUserById(userId);
       if (!user) {
-        return res
-          .status(400)
-          .json(formatErrorResponse("Invalid or expired token"));
+          return res.status(404).json(formatErrorResponse("User not found"));
       }
 
+      // Reset the password (ensure it's hashed)
       await UserModel.resetPassword(user.id, password);
-      res
-        .status(200)
-        .json(formatSuccessResponse(null, "Password reset successfully"));
-    } catch (error) {
+
+      return res.status(200).json(formatSuccessResponse(null, "Password reset successfully"));
+  } catch (error) {
+      console.error("Error resetting password:", error.message);
       Sentry.captureException(error); // Capture error with Sentry
-      res.status(500).json(formatErrorResponse(error.message));
-    }
-  },
+      return res.status(500).json(formatErrorResponse("An error occurred while resetting the password"));
+  }
+},
+
 
   forgotPassword: async (req, res) => {
     const { phone, key } = req.body;
@@ -280,6 +274,43 @@ const UserController = {
         );
     }
   },
+  verifyForgotPasswordOtp: async (req, res) => {
+    const { phone, key, otp } = req.body;
+
+    // Validate input fields
+    if (!phone || !key || !otp) {
+        return res.status(400).json(formatErrorResponse("Phone, country code, and OTP are required"));
+    }
+
+    try {
+        // Fetch the user by phone number and country key
+        const user = await UserModel.getUserByPhoneAndKey(phone, key);
+
+        if (!user) {
+            return res.status(404).json(formatErrorResponse("User not found"));
+        }
+
+        // Check if OTP has expired
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        if (nowInSeconds > user.otpExpiresInSeconds) {
+            return res.status(400).json(formatErrorResponse("OTP has expired"));
+        }
+
+        // Check if the OTP matches
+        if (otp !== user.otp) {
+            return res.status(400).json(formatErrorResponse("Invalid OTP"));
+        }
+
+        // OTP is valid, allow the user to reset the password (pass user ID to the next step)
+        return res.status(200).json(
+            formatSuccessResponse({ userId: user.id }, "OTP verified successfully. You can now reset your password.")
+        );
+    } catch (error) {
+        console.error("Error verifying OTP:", error.message);
+        Sentry.captureException(error);
+        return res.status(500).json(formatErrorResponse(error.message));
+    }
+},
 
   createCustomToken: (req, res) => {
     const { userId } = req.body;

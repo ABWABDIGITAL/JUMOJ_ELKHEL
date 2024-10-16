@@ -44,7 +44,7 @@ router.post('/reset-password', UserController.resetPassword);
 router.post("/forgot-password", UserController.forgotPassword);
 // Route to verify OTP
 router.post('/verify-otp', UserController.verifyOtp);
-
+router.post('/verifyForgotPasswordOtp', UserController.verifyForgotPasswordOtp);
 
 router.post('/create-custom-token', UserController.createCustomToken);
 // Update user profile (Requires authentication)

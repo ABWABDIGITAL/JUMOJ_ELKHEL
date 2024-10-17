@@ -275,32 +275,53 @@ const AdvertisementController = {
   // Get all favorite advertisements for the user
   getFavorites: async (req, res) => {
     try {
-      const userId = req.user?.id; // Extract user ID from the request, assuming it's set by middleware
-  
-      // Check if userId is defined
-      if (!userId) {
-        return res.status(401).json({ success: false, message: "User not authenticated" });
-      }
-  
-      // Fetch favorite advertisements using the data access layer
-      const favoriteAdvertisements = await AdvertisementModel.getFavoriteAdvertisements(userId);
-  
-      // Return success response with retrieved favorite advertisements
-      return res.status(200).json({
-        success: true,
-        message: "Favorites retrieved successfully",
-        data: favoriteAdvertisements,
-      });
+        // Extract user ID from the request, assuming it's set by middleware
+        const userId = req.user?.id;
+        console.log(userId);
+
+        // Check if userId is defined
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+        }
+
+        // Log the user ID for debugging purposes
+        console.log(`Fetching favorites for user ID: ${userId}`);
+
+        // Fetch favorite advertisements using the data access layer
+        const favoriteAdvertisements = await AdvertisementModel.getFavoriteAdvertisements(userId);
+
+        // Check if any favorite advertisements were found
+        if (favoriteAdvertisements.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No favorite advertisements found",
+                data: [],
+            });
+        }
+
+        // Return success response with retrieved favorite advertisements
+        return res.status(200).json({
+            success: true,
+            message: "Favorites retrieved successfully",
+            data: favoriteAdvertisements,
+        });
     } catch (error) {
-      console.error("Error retrieving favorite advertisements:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Error retrieving advertisements",
-        data: error.message,
-      });
+        console.error("Error retrieving favorite advertisements:", error);
+        
+        // Log the error message and stack trace for debugging
+        console.error("Error details:", error.stack);
+
+        return res.status(500).json({
+            success: false,
+            message: "Error retrieving advertisements",
+            data: error.message, // You may want to omit this in production
+        });
     }
-  },
-  
+},
+
   // Function to add a rating for an advertisement
   rateAdvertisement: async (req, res) => {
     const { advertisementId, rating } = req.body;

@@ -277,7 +277,7 @@ const AdvertisementController = {
     try {
         // Extract user ID from the request, assuming it's set by middleware
         const userId = req.user?.id;
-        console.log(req);
+        console.log("Request User:", req.user);
 
         // Check if userId is defined
         if (!userId) {

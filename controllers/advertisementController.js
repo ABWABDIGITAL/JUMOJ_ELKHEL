@@ -227,7 +227,49 @@ const AdvertisementController = {
         );
     }
   },
-  addToFavorites: async (req, res) => {
+// Add advertisement to favorites
+addToFavorites: async (req, res) => {
+  const { advertisementId } = req.params;
+  const userId = req.user.id; // Assuming user ID is available in req.user
+  try {
+    const success = await AdvertisementModel.addFavorite(userId, advertisementId);
+    if (success) {
+      return res.status(200).json(formatSuccessResponse(null, "Advertisement added to favorites"));
+    } else {
+      return res.status(400).json(formatErrorResponse("Advertisement is already a favorite"));
+    }
+  } catch (error) {
+    console.error("Error adding advertisement to favorites:", error);
+    return res.status(500).json(formatErrorResponse("Error adding advertisement to favorites", error.message));
+  }
+},
+// Remove advertisement from favorites
+removeFromFavorites: async (req, res) => {
+  const { advertisementId } = req.params;
+  const userId = req.user.id; // Assuming user ID is available in req.user
+  try {
+    const success = await AdvertisementModel.removeFavorite(userId, advertisementId);
+    if (success) {
+      return res.status(200).json(formatSuccessResponse(null, "Advertisement removed from favorites"));
+    } else {
+      return res.status(404).json(formatErrorResponse("Advertisement not found in favorites"));
+    }
+  } catch (error) {
+    console.error("Error removing advertisement from favorites:", error);
+    return res.status(500).json(formatErrorResponse("Error removing advertisement from favorites", error.message));
+  }
+},
+// Get all favorite advertisements for the user
+getFavorites: async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user
+  try {
+    const favoriteAds = await AdvertisementModel.getFavoriteAdvertisements(userId);
+    return res.status(200).json(formatSuccessResponse(favoriteAds, "Favorite advertisements retrieved successfully"));
+  } catch (error) {
+    console.error("Error retrieving favorite advertisements:", error);
+    return res.status(500).json(formatErrorResponse("Error retrieving favorite advertisements", error.message));
+  }
+},  addToFavorites: async (req, res) => {
     const { advertisementId } = req.params;
     const userId = req.user?.id; // Safely access user ID
     

@@ -230,7 +230,7 @@ const AdvertisementController = {
 // Add advertisement to favorites
 addToFavorites: async (req, res) => {
   const { advertisementId } = req.params;
-  const userId = req.userId; // Assuming user ID is available in req.user
+  const userId = req.user?.userId; // Assuming user ID is available in req.user
   try {
     const success = await AdvertisementModel.addFavorite(userId, advertisementId);
     if (success) {

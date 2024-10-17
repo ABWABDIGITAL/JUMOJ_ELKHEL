@@ -141,7 +141,7 @@ const TrainingModel = {
       [limit, offset]
     );
 
-    return result.rows; // Return the list of trainings for the current page
+    return result.rows; 
   },
   // Update training with HTML response
   updateTraining: async (trainingId, { title, description, price, period, age, trainingFor, training_type, image }) => {

@@ -51,13 +51,11 @@ const TrainingController = {
         image,
       });
 
-      res
-        .status(201)
-        .json({
-          success: true,
-          message: "Training created successfully",
-          data: training,
-        });
+      res.status(201).json({
+        success: true,
+        message: "Training created successfully",
+        data: training,
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -70,13 +68,11 @@ const TrainingController = {
     try {
       const training = await TrainingModel.getTrainingById(trainingId);
       if (training) {
-        res
-          .status(200)
-          .json({
-            success: true,
-            message: "Training retrieved successfully",
-            data: training,
-          });
+        res.status(200).json({
+          success: true,
+          message: "Training retrieved successfully",
+          data: training,
+        });
       } else {
         res.status(404).json({ success: false, message: "Training not found" });
       }
@@ -86,48 +82,61 @@ const TrainingController = {
   },
 
   // Get all trainings
- getAllTrainings: async (req, res) => {
+  getAllTrainings: async (req, res) => {
     const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
-  
+
     const pageInt = parseInt(page, 10);
     const limitInt = parseInt(limit, 10);
     const offset = (pageInt - 1) * limitInt; // Calculate the offset for pagination
-  
+
     try {
       // Fetch paginated trainings
-      const trainings = await TrainingModel.getAllTrainingsWithPagination(limitInt, offset);
+      const trainings = await TrainingModel.getAllTrainingsWithPagination(
+        pageInt,
+        limitInt
+      );
       const total = await TrainingModel.getTotalTrainingsCount(); // Get total number of trainings
-  
+
       const totalPages = Math.ceil(total / limitInt); // Calculate total number of pages
-  
+
+      // Generate HTML content for each training
+      const formattedTrainings = trainings.map((training) => {
+        return `<h2>${training.title}</h2>
+                <p><strong>Description:</strong> ${training.description}</p>
+                <p><strong>Price:</strong> ${training.price}</p>
+                <p><strong>Period:</strong> ${training.period}</p>
+                <p><strong>Age Group:</strong> ${training.age}</p>
+                <p><strong>Training For:</strong> ${training.training_for}</p>
+                <p><strong>Contact Us:</strong> ${training.training_type}</p>
+                <img src="${training.image_url}" alt="${training.title}" style="width:200px;height:auto;" />`;
+      });
+
+      // Build the response object
       const response = {
         total,
         totalPages,
         currentPage: pageInt,
         limit: limitInt,
-        trainings,
+        data: formattedTrainings, // Array of HTML strings
       };
-  
+
       res.status(200).json({
         success: true,
         message: "Trainings retrieved successfully",
-        data: response,
+        data: response.data, // Returning just the data with HTML strings
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: "Error retrieving trainings", error: error.message });}
+      res.status(500).json({
+        success: false,
+        message: "Error retrieving trainings",
+        error: error.message,
+      });
     }
- ,
-// Update training by ID
-updateTraining: async (req, res) => {
-  const { trainingId } = req.params;
-  const { title, description, price, period, age, trainingFor, training_type } = req.body;
-
-  const image = req.file
-    ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/trainings/${req.file.filename}`
-    : null;
-
-  try {
-    const updatedTraining = await TrainingModel.updateTraining(trainingId, {
+  },
+  // Update training by ID
+  updateTraining: async (req, res) => {
+    const { trainingId } = req.params;
+    const {
       title,
       description,
       price,
@@ -135,49 +144,62 @@ updateTraining: async (req, res) => {
       age,
       trainingFor,
       training_type,
-      image,
-    });
+    } = req.body;
 
-    if (updatedTraining) {
-      res.status(200).json({
-        success: true,
-        message: "Training updated successfully",
-        data: updatedTraining,
+    const image = req.file
+      ? `http://${process.env.VPS_IP}:${process.env.PORT}/uploads/trainings/${req.file.filename}`
+      : null;
+
+    try {
+      const updatedTraining = await TrainingModel.updateTraining(trainingId, {
+        title,
+        description,
+        price,
+        period,
+        age,
+        trainingFor,
+        training_type,
+        image,
       });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "Training not found",
-      });
+
+      if (updatedTraining) {
+        res.status(200).json({
+          success: true,
+          message: "Training updated successfully",
+          data: updatedTraining,
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          message: "Training not found",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-},
+  },
 
-// Delete training by ID
-deleteTraining: async (req, res) => {
-  const { trainingId } = req.params;
+  // Delete training by ID
+  deleteTraining: async (req, res) => {
+    const { trainingId } = req.params;
 
-  try {
-    const deletedTraining = await TrainingModel.deleteTraining(trainingId);
-    if (deletedTraining) {
-      res.status(200).json({
-        success: true,
-        message: `Training titled "${deletedTraining.title}" was successfully deleted.`,
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "Training not found",
-      });
+    try {
+      const deletedTraining = await TrainingModel.deleteTraining(trainingId);
+      if (deletedTraining) {
+        res.status(200).json({
+          success: true,
+          message: `Training titled "${deletedTraining.title}" was successfully deleted.`,
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          message: "Training not found",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-},
-
-
+  },
 };
 
 module.exports = TrainingController;

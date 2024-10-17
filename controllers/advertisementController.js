@@ -274,16 +274,33 @@ const AdvertisementController = {
 
   // Get all favorite advertisements for the user
   getFavorites: async (req, res) => {
-    const userId = req.user.id; // Assuming user ID is available in req.user
-
     try {
-      const favoriteAds = await AdvertisementModel.getFavoriteAdvertisements(userId);
-      return res.status(200).json(formatSuccessResponse(favoriteAds, "Favorite advertisements retrieved successfully"));
+      const userId = req.user?.id; // Extract user ID from the request, assuming it's set by middleware
+  
+      // Check if userId is defined
+      if (!userId) {
+        return res.status(401).json({ success: false, message: "User not authenticated" });
+      }
+  
+      // Fetch favorite advertisements using the data access layer
+      const favoriteAdvertisements = await AdvertisementModel.getFavoriteAdvertisements(userId);
+  
+      // Return success response with retrieved favorite advertisements
+      return res.status(200).json({
+        success: true,
+        message: "Favorites retrieved successfully",
+        data: favoriteAdvertisements,
+      });
     } catch (error) {
       console.error("Error retrieving favorite advertisements:", error);
-      return res.status(500).json(formatErrorResponse("Error retrieving favorite advertisements", error.message));
+      return res.status(500).json({
+        success: false,
+        message: "Error retrieving advertisements",
+        data: error.message,
+      });
     }
   },
+  
   // Function to add a rating for an advertisement
   rateAdvertisement: async (req, res) => {
     const { advertisementId, rating } = req.body;

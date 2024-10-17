@@ -174,6 +174,7 @@ removeFavorite: async (userId, advertisementId) => {
 },
 
 // Get all favorite advertisements for a user
+
 getFavoriteAdvertisements: async (userId) => {
   const result = await pool.query(
     `SELECT a.* FROM advertisements a
@@ -183,6 +184,7 @@ getFavoriteAdvertisements: async (userId) => {
   );
   return result.rows; // Return the list of favorite advertisements
 },
+
 
 // Check if an advertisement is a favorite for a user
 isFavorite: async (userId, advertisementId) => {

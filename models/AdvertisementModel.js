@@ -154,6 +154,43 @@ getPromotionAdvertisements: async () => {
      WHERE a.is_promotion = TRUE`
   );
   return result.rows;
+},  // Add an advertisement to favorites
+addFavorite: async (userId, advertisementId) => {
+  const result = await pool.query(
+    `INSERT INTO favorites (user_id, advertisement_id) VALUES ($1, $2)
+     ON CONFLICT (user_id, advertisement_id) DO NOTHING RETURNING *`,
+    [userId, advertisementId]
+  );
+  return result.rowCount > 0; // Return true if inserted successfully
+},
+
+// Remove an advertisement from favorites
+removeFavorite: async (userId, advertisementId) => {
+  const result = await pool.query(
+    `DELETE FROM favorites WHERE user_id = $1 AND advertisement_id = $2 RETURNING *`,
+    [userId, advertisementId]
+  );
+  return result.rowCount > 0; // Return true if deleted successfully
+},
+
+// Get all favorite advertisements for a user
+getFavoriteAdvertisements: async (userId) => {
+  const result = await pool.query(
+    `SELECT a.* FROM advertisements a
+     JOIN favorites f ON a.id = f.advertisement_id
+     WHERE f.user_id = $1`,
+    [userId]
+  );
+  return result.rows; // Return the list of favorite advertisements
+},
+
+// Check if an advertisement is a favorite for a user
+isFavorite: async (userId, advertisementId) => {
+  const result = await pool.query(
+    `SELECT * FROM favorites WHERE user_id = $1 AND advertisement_id = $2`,
+    [userId, advertisementId]
+  );
+  return result.rowCount > 0; // Return true if the advertisement is a favorite
 },
 addRating: async (advertisementId, userId, rating) => {
   const query = `

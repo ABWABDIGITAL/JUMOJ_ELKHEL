@@ -58,5 +58,14 @@ router.get(
   "/advertisements/department/:departmentId",
   AdvertisementController.getAdvertisementsByDepartmentId
 );
+// Add to favorites
+router.post("/advertisements/:advertisementId/favorite", AdvertisementController.addToFavorites);
+
+// Remove from favorites
+router.delete("/advertisements/:advertisementId/favorite", AdvertisementController.removeFromFavorites);
+
+// Get user's favorite advertisements
+router.get("/advertisements/favorites", AdvertisementController.getFavoriteAdvertisements);
+
 
 module.exports = router;

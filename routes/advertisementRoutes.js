@@ -59,7 +59,8 @@ router.get(
   AdvertisementController.getAdvertisementsByDepartmentId
 );
 // Add to favorites
-router.post("/advertisements/:advertisementId/favorite", authenticateToken,AdvertisementController.addToFavorites);
+router.post("/advertisements/:advertisementId/favorite", authenticateToken, AdvertisementController.addToFavorites);
+
 
 // Remove from favorites
 router.delete("/advertisements/:advertisementId/favorite", AdvertisementController.removeFromFavorites);

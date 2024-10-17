@@ -65,7 +65,7 @@ router.post("/advertisements/:advertisementId/favorite", authenticateToken,Adver
 router.delete("/advertisements/:advertisementId/favorite", AdvertisementController.removeFromFavorites);
 
 // Get user's favorite advertisements
-router.get("/advertisements/favorites",authenticateToken, AdvertisementController.getFavorites);
+router.get("/favorites",authenticateToken, AdvertisementController.getFavorites);
 
 
 module.exports = router;

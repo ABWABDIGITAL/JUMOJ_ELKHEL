@@ -227,34 +227,31 @@ const AdvertisementController = {
         );
     }
   },
-  getFavorites: async (req, res) => {
-    try {
-      const userId = req.user?.id; // Extract user ID from the request, assuming it's set by middleware
+  addToFavorites: async (req, res) => {
+    const { advertisementId } = req.params;
+    const userId = req.user?.id; // Safely access user ID
+    
+    // Log req.user to check if it's set
+    console.log("Request User:", req.user);
   
-      // Check if userId is defined
-      if (!userId) {
-        return res.status(401).json({ success: false, message: "User not authenticated" });
-      }
-  
-      // Fetch favorite advertisements using the data access layer
-      const favoriteAdvertisements = await AdvertisementModel.getFavoriteAdvertisements(userId);
-  
-      // Return success response with retrieved favorite advertisements
-      return res.status(200).json({
-        success: true,
-        message: "Favorites retrieved successfully",
-        data: favoriteAdvertisements,
-      });
-    } catch (error) {
-      console.error("Error retrieving favorite advertisements:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Error retrieving advertisements",
-        data: error.message,
-      });
+    if (!userId) {
+      return res.status(401).json(formatErrorResponse("User not authenticated"));
     }
-  },
   
+    try {
+      const success = await AdvertisementModel.addFavorite(userId, advertisementId);
+      if (success) {
+        return res.status(200).json(formatSuccessResponse(null, "Advertisement added to favorites"));
+      } else {
+        return res.status(400).json(formatErrorResponse("Advertisement is already a favorite"));
+      }
+    } catch (error) {
+      console.error("Error adding advertisement to favorites:", error);
+      return res.status(500).json(formatErrorResponse("Error adding advertisement to favorites", error.message));
+    }
+  }
+  
+  ,
 
   // Remove advertisement from favorites
   removeFromFavorites: async (req, res) => {
@@ -277,30 +274,16 @@ const AdvertisementController = {
 
   // Get all favorite advertisements for the user
   getFavorites: async (req, res) => {
-    const userId = req.user?.id; // Extracting the userId from the authenticated request
-
-    // Check if userId is available
-    if (!userId) {
-        return res.status(401).json(formatErrorResponse("User not authenticated"));
-    }
+    const userId = req.user.id; // Assuming user ID is available in req.user
 
     try {
-        // Query to fetch advertisements that are favorites for the user
-        const favoriteAdvertisements = await db.query(`
-            SELECT a.* FROM advertisements a
-            JOIN favorites f ON a.advertisement_id = f.advertisement_id
-            WHERE f.user_id = $1
-        `, [userId]);
-
-        // Send the results as a response
-        return res.status(200).json(formatSuccessResponse(favoriteAdvertisements.rows, "Favorites retrieved successfully"));
+      const favoriteAds = await AdvertisementModel.getFavoriteAdvertisements(userId);
+      return res.status(200).json(formatSuccessResponse(favoriteAds, "Favorite advertisements retrieved successfully"));
     } catch (error) {
-        console.error("Error retrieving favorite advertisements:", error);
-        return res.status(500).json(formatErrorResponse("Error retrieving favorite advertisements", error.message));
+      console.error("Error retrieving favorite advertisements:", error);
+      return res.status(500).json(formatErrorResponse("Error retrieving favorite advertisements", error.message));
     }
-}
-
-,
+  },
   // Function to add a rating for an advertisement
   rateAdvertisement: async (req, res) => {
     const { advertisementId, rating } = req.body;

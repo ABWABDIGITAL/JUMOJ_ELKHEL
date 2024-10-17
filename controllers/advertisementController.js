@@ -227,14 +227,18 @@ const AdvertisementController = {
         );
     }
   },
-  // Add advertisement to favorites
   addToFavorites: async (req, res) => {
     const { advertisementId } = req.params;
-    const userId = req.user.id; // Assuming user ID is available in req.user
-
+    const userId = req.user?.id; // Optional chaining to safely access user ID
+  
+    // Check if userId is defined
+    if (!userId) {
+      return res.status(401).json(formatErrorResponse("User not authenticated")); // Adjust status code as needed
+    }
+  
     try {
       const success = await AdvertisementModel.addFavorite(userId, advertisementId);
-
+  
       if (success) {
         return res.status(200).json(formatSuccessResponse(null, "Advertisement added to favorites"));
       } else {
@@ -244,7 +248,8 @@ const AdvertisementController = {
       console.error("Error adding advertisement to favorites:", error);
       return res.status(500).json(formatErrorResponse("Error adding advertisement to favorites", error.message));
     }
-  },
+  }
+  ,
 
   // Remove advertisement from favorites
   removeFromFavorites: async (req, res) => {

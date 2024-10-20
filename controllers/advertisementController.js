@@ -246,7 +246,7 @@ addToFavorites: async (req, res) => {
 // Remove advertisement from favorites
 removeFromFavorites: async (req, res) => {
   const { advertisementId } = req.params;
-  const userId = req.user.id; // Assuming user ID is available in req.user
+  const userId = req.user?.userId; // Assuming user ID is available in req.user
   try {
     const success = await AdvertisementModel.removeFavorite(userId, advertisementId);
     if (success) {

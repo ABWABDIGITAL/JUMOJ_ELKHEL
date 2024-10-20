@@ -63,7 +63,7 @@ router.post("/advertisements/:advertisementId/favorite", authenticateToken, Adve
 
 
 // Remove from favorites
-router.delete("/advertisements/:advertisementId/favorite", AdvertisementController.removeFromFavorites);
+router.delete("/advertisements/:advertisementId/favorite", authenticateToken, AdvertisementController.removeFromFavorites);
 
 // Get user's favorite advertisements
 router.get("/favorites",authenticateToken, AdvertisementController.getFavorites);

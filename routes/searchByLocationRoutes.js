@@ -16,13 +16,21 @@ router.get('/api/search', authenticateToken, async (req, res) => {
     }
 
     try {
+        // Debug log for parameters
+        console.log('Searching for users with locationId:', locationId, 'Page:', page, 'Limit:', limit);
+
         const users = await UserModel.searchByLocation(locationId, page, limit); // Call the search function in your model
+
+        // Debug log for results
+        console.log('Users found:', users);
+
         return res.status(200).json({
             success: true,
             message: "Results retrieved successfully",
             data: users
         });
     } catch (error) {
+        console.error('Error fetching users:', error.message); // Log the error message
         return res.status(500).json({
             success: false,
             message: `Error fetching results: ${error.message}`,

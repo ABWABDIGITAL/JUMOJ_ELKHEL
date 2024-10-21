@@ -1,6 +1,6 @@
 const express = require('express');
 const authenticateToken = require('../middleware/authMiddleware');
-const UserModel = require('../models/userModel'); // Import your UserModel
+const  LocationSearchModel = require('../models/LocationSearchModel'); // Import your UserModel
 const router = express.Router();
 
 // Search for users by location with authentication
@@ -19,7 +19,7 @@ router.get('/api/search', authenticateToken, async (req, res) => {
         // Debug log for parameters
         console.log('Searching for users with locationId:', locationId, 'Page:', page, 'Limit:', limit);
 
-        const users = await UserModel.searchByLocation(locationId, page, limit); // Call the search function in your model
+        const users = await  LocationSearchModel.searchByLocation(locationId, page, limit); // Call the search function in your model
 
         // Debug log for results
         console.log('Users found:', users);

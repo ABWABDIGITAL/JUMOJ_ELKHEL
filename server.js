@@ -91,6 +91,7 @@ app.use("/trainings", require("./routes/trainingRoutes"));
 app.use("/stores", require("./routes/storeRoutes"));
 app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("", require("./routes/searchByLocationRoutes"));
+app.use("/api", require("./routes/ReportRoutes"));
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/faq", faqRoutes);
 app.use("/api/commission-payments", commissionPaymentRoutes);

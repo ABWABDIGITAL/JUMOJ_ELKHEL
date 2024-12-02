@@ -88,6 +88,7 @@ app.use("/api/advertisement", require("./routes/advertisementRoutes"));
 app.use("/api/location", require("./routes/locationRoutes"));
 app.use("/supplies", require("./routes/supplyRoutes"));
 app.use("/trainings", require("./routes/trainingRoutes"));
+app.use("/api", require("./routes/stableAdvertisementRoutes"));
 app.use("/stores", require("./routes/storeRoutes"));
 app.use("/promotions", require("./routes/promotionRoutes"));
 app.use("", require("./routes/searchByLocationRoutes"));
